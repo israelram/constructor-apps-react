@@ -44,8 +44,9 @@ export default StyleSheet.create({
       "alignItems":"center",
     },
     "singleImage":{
-      "height":productImageW,
-      "width":productImageW,
-      "margin":4,
+      "height":productImageW/1.2,
+      "width":productImageW/1.2,
+      "margin":8,
+      "marginLeft":0
     }
 });

@@ -1,9 +1,8 @@
 import React, {Component} from "react";
-import {Text, View, TouchableOpacity,ScrollView, UIManager,FlatList} from "react-native";
+import { View, TouchableOpacity,ScrollView, UIManager,FlatList,StyleSheet,Image} from "react-native";
 import style from "./style";
-import css from '@styles/global'
-import SingleImage from './SingleImage'
-import Shadow from './../Theme/Shadow'
+import css from '@styles/global';
+import { Block, Text, theme, Button} from 'galio-framework';
 
 export default class Photos extends Component {
   constructor(props) {
@@ -25,23 +24,26 @@ export default class Photos extends Component {
   }
 
   renderItem({ item, index }) {
-    return (<TouchableOpacity  key={item.photo} onPress={()=>{this.props.onPress(index)}} ><SingleImage url={item.photo} ></SingleImage></TouchableOpacity>)
+    return (
+    <TouchableOpacity  key={index} onPress={()=>{this.props.onPress(index)}} >
+      <Image source={{uri:item.photo}} style={[style.singleImage,{"overflow":"hidden",borderRadius:css.dynamic.general.rounded+""=="true"?4:0}]} />
+    </TouchableOpacity>)
     }
 
   showPhotos(){
     if(!this.props.isVertical)
     {
       return(
-      <ScrollView style={style.scrollView}
-                        directionalLockEnabled={true}
-                        horizontal={true}>
+      <ScrollView directionalLockEnabled={true} horizontal={true}>
 
-                <View style={{flexDirection:'row',justifyContent:'center',marginBottom:10}}>
+                <Block row center>
                   {this.props.photos.map((item,index)=>{
-                    
-                    return (<TouchableOpacity  key={item.photo} onPress={()=>{this.props.onPress(index)}} ><Shadow shadowOpacity={0.2}><SingleImage  url={item.photo}></SingleImage></Shadow></TouchableOpacity>)
+                    return (
+                    <TouchableOpacity  key={item.photo} onPress={()=>{this.props.onPress(index)}} >
+                      <Image source={{uri:item.photo}} style={[style.singleImage,{"overflow":"hidden",borderRadius:css.dynamic.general.rounded+""=="true"?4:0}]}></Image>
+                    </TouchableOpacity>)
                   })}
-                </View>
+                </Block>
             </ScrollView>
   )
   }
@@ -61,10 +63,16 @@ export default class Photos extends Component {
     const rtlView = this.state.rtl && { flexDirection: 'row-reverse' };
     return (
 
-      <View style={[{marginTop:15,marginLeft:5, marginRight:5}]}>
-        <Text style={[{textAlign: 'left', color:'#666b73',fontSize:20, fontWeight:"bold", marginBottom:5,fontFamily: 'lato-bold'},rtlText]}>{this.props.title}</Text>
+      <Block >
+        <Text h5>{this.props.title}</Text>
           {this.showPhotos()}
-      </View>
+      </Block>
     );
   }
 }
+
+const styles = StyleSheet.create({
+  separator:{
+    height:theme.SIZES.BASE
+  }
+});

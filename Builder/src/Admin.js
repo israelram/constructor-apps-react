@@ -20,6 +20,8 @@ import Create from './containers/Builder/Create'
 import Preview from './containers/Builder/Preview'
 import Billing from './containers/Builder/Billing'
 import Users from './containers/Builder/Users'
+import UserApps from './containers/Builder/UserApps'
+import Pricing from './containers/Builder/Pricing'
 
 //CROSS USAGE - change on switch
 /**
@@ -85,6 +87,9 @@ class Admin extends Component {
             {/*<Route currentLangData={this.props.currentLangData} path="/users" loadedPath="/users/" tableHeaders={["email","numOfApps","userImage"]} resetEditPath={true} hideHamburger={true} component={Fireadmin}/>
             <Route currentLangData={this.props.currentLangData} path="/users/:sub" loadedPath="/users/" tableHeaders={["email","numOfApps","userImage"]} resetEditPath={true} hideHamburger={true} component={Fireadmin}/>*/}
             <Route currentLangData={this.props.currentLangData} path="/users" component={Users}></Route>
+            <Route currentLangData={this.props.currentLangData} path="/users/:sub" component={UserApps}/>
+            <Route currentLangData={this.props.currentLangData} path="/manage/pricing" component={Pricing}></Route>
+
 
              {/* APP ADMIN */}
 

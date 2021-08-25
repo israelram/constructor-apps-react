@@ -21,6 +21,15 @@ export default class LoginUI extends Component {
         this.handleSubmit = this.handleSubmit.bind(this);
     }
 
+    componentDidMount(){
+        if(Config.isDemo){
+            this.setState({
+                username:"admin@admin.com",
+                password:"password"
+            })
+        }
+    }
+
     handleChangeDisplayName(event){
         this.setState({ displayName: event.target.value }); 
     }   

@@ -5,6 +5,7 @@ import T from '@functions/translation';
 import css from '@styles/global';
 import ButtonUNI from '@uniappbuttons/AccentButton';
 import Navbar from '@components/Navbar'
+import {Block, Input} from 'galio-framework'
 
 
 class AddContact extends Component {
@@ -28,7 +29,7 @@ class AddContact extends Component {
                   </Text>
                   <View style={{marginLeft:30,marginRight:30}}>
                         <Text style={css.layout.emailFPTxt}>{T.contactName}</Text>
-                        <FormInput
+                        <Input
                             value={this.state.contactName}
                             ref={contactName => this.contactName = contactName}
                             autoCapitalize = 'none'

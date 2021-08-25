@@ -11,6 +11,7 @@ import ButtonUNI from '@uniappbuttons/AccentButton';
 import SmartIcon from '@smarticon';
 import ProfileSettingsUI from '@components/LoginUI/ProfileSettingsUI';
 import appConfig from '../../../app.json';
+import { Block } from "galio-framework";
 
 
 
@@ -267,7 +268,9 @@ export default class ProfileSettings extends Component {
         this.props.navigation.pop();
     }
 
+    
     render(){
+        
         if(this.state.isLoggedIn){
             //Show Profile
             

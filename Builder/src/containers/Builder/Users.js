@@ -1,3 +1,8 @@
+/*eslint-disable*/
+/*eslint no-unused-vars: "off"*/
+/*eslint eqeqeq: "off"*/
+/*eslint array-callback-return: "off"*/
+/*eslint-disable-next-line: "off"*/
 import React, { Component } from 'react'
 import firebase from './../../config/database'
 import SkyLight from 'react-skylight';
@@ -6,6 +11,7 @@ import Card from './../../ui/template/Card'
 import ReactTable from "react-table"
 import Common from '../../common.js'
 import matchSorter from 'match-sorter'
+import { Link } from 'react-router'
 var md5 = require('md5');
 
 const ConditionalDisplay = ({condition, children}) => condition ? children : <div></div>;
@@ -22,7 +28,7 @@ export default class Users extends Component {
             subscriptionType: "",
             userSubscription: {},
             planID: "",
-            status: "inactive",
+            status: "deleted",
             columns: []
         }
 
@@ -91,7 +97,7 @@ export default class Users extends Component {
                     subscriptionType: Object.keys(snapshot.val()).length>2?"Regular":"Manual"
                 })
             }else{
-                _this.setState({ subscriptionType: "Manual", status: "inactive" })
+                _this.setState({ subscriptionType: "Manual", status: "deleted" })
             }
         });
 
@@ -108,7 +114,7 @@ export default class Users extends Component {
                 subscription_plan_id: _this.state.planID
             })
 
-            if(_this.state.status === "inactive" || _this.state.planID==0){
+            if(_this.state.status === "deleted" || _this.state.planID==0){
                 path = firebase.app.database().ref('/paddlePayments/'+md5(_this.state.currentUser.email)+'/subscription_plan_id');
                 path.remove();
             }
@@ -166,7 +172,7 @@ export default class Users extends Component {
      //Create row depending of type 
      rowCreator(row, colIndex, rowIndex){
         var key=row.column.id;
-
+        
         if(Config.adminConfig.fieldsTypes.photo.indexOf(key)>-1){
             //This is photo 
             //return (<div className="tableImageDiv"><img alt={row.original.name} src={row.value}  width="50" height="50"/></div>)
@@ -178,7 +184,7 @@ export default class Users extends Component {
                 //But can be string
                 return (<div className="text-center">{row.original}</div>)
             }else{
-              return colIndex===0?(<div className="text-center">{row.value}</div>):(<div className="text-center">{row.value}</div>)
+              return colIndex===4?(<div className="text-center"><Link to={"/users/"+row.original.uid}>{row.value}</Link></div>):(<div className="text-center">{row.value}</div>)
           }
         }
     }
@@ -195,7 +201,6 @@ export default class Users extends Component {
                 <option value={element.id}>{element.name}</option>
             )
         })
-        
     }
 
     render() {
@@ -208,13 +213,13 @@ export default class Users extends Component {
           
         var users = this.state.userList;
         if(this.checkIsSuperAdmin()){
-            return (
-                <div className="container-fluid">
+                return(
+                    <div className="container-fluid">
                     <div className="row">
                         <div className="col-md-12">
                         <div className="card">
                             <div className="card-header card-header-icon" data-background-color="rose">
-                            <i className="material-icons">assignment</i>
+                            <i className="material-icons">assignment</i> Users List
                             </div>
                             <h4 className="card-title"><span className="text-rose">{Object.keys(users).length}</span> users</h4>
                                 <div className="card-content">
@@ -226,7 +231,7 @@ export default class Users extends Component {
                                         }
                                         columns={this.state.columns}
                                         className="-striped -highlight"  
-                                        defaultPageSize={50}
+                                        defaultPageSize={10}
                                         showPagination={true}
                                     />  
                                 </div>
@@ -246,9 +251,9 @@ export default class Users extends Component {
                                     <label className="col-sm-3 label-on-left col-sm-offset-2">Status</label>
                                     <div className="col-sm-3">
                                         <div className="form-group label-floating is-empty" style={{'marginTop':'-10px'}}>
-                                            <select value={this.state.status} className="form-control" id="sel1" onChange={(e)=>{this.setState({status: e.target.value}) }}>
+                                            <select value={this.state.status} className="form-control" id="sel1" onChange={(e)=>{this.setState({status: e.target.value, planID:e.target.value=="deleted"?0:this.state.planID}) }}>
                                                 <option value="active">Active</option>
-                                                <option value="inactive">Inactive</option>
+                                                <option value="deleted">Inactive</option>
                                             </select>
                                         </div>
                                     </div>
@@ -259,7 +264,7 @@ export default class Users extends Component {
                                     <label className="col-sm-3 label-on-left col-sm-offset-2">Plan ID</label>
                                     <div className="col-sm-3">
                                         <div className="form-group label-floating is-empty" style={{'marginTop':'-10px'}}>
-                                            <select value={this.state.planID?this.state.planID:0} className="form-control" id="sel1" onChange={(e)=>{this.setState({ planID: e.target.value, status: e.target.value==0?"inactive":"active"})}}>
+                                            <select value={this.state.planID?this.state.planID:0} className="form-control" id="sel1" onChange={(e)=>{this.setState({ planID: e.target.value, status: e.target.value==0?"deleted":"active"})}}>
                                                 {this.renderPlanSelector()}
                                             </select>
                                         </div>
@@ -290,7 +295,7 @@ export default class Users extends Component {
                         <hr/>
                 </SkyLight>
                 </div>
-            )
+                )
         }else{
             return(
                 <div className="container-fluid">

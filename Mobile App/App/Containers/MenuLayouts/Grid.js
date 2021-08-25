@@ -14,7 +14,7 @@ import SmartIcon from '@smarticon';
 import css from '@styles/global';
 var to = require('to-case')
 import { BlurView } from 'expo';
-import { SafeAreaView } from 'react-navigation'
+import SafeAreaView from 'react-native-safe-area-view';
 
 
 const paddingValue = 8;

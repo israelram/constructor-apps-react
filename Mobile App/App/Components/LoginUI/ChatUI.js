@@ -10,6 +10,7 @@ import css from '@styles/global';
 import { GiftedChat,Send,Bubble,InputToolbar,Time,Actions } from 'react-native-gifted-chat'
 import SmartIcon from '@smarticon';
 import { ActionSheetProvider, connectActionSheet } from '@expo/react-native-action-sheet';
+import Navbar from '@components/Navbar'
 
 import Modal from 'react-native-modal';
 const ConditionalDisplay = ({condition, children}) => condition ? children : <View></View>;
@@ -264,7 +265,8 @@ class Chat extends Component {
       
     return (
         <View style={[css.layout.containerBackground,{flex:1}]}>
-          <ChatNav isPublic={this.props.isPublic} navigation={this.props.navigation} userName={this.props.groupChatName != "" ?this.state.text:this.props.selectedUserFullname} userAvatar={this.props.selectedUserAvatar == ""?this.props.avatar:this.props.selectedUserAvatar} isRoot={this.props.isRoot} showRightButton={false} backAction={this.props.back} rightAction={this.edit} />
+          {/* <ChatNav isPublic={this.props.isPublic} navigation={this.props.navigation} userName={this.props.groupChatName != "" ?this.state.text:this.props.selectedUserFullname} userAvatar={this.props.selectedUserAvatar == ""?this.props.avatar:this.props.selectedUserAvatar} isRoot={this.props.isRoot} showRightButton={false} backAction={this.props.back} rightAction={this.edit} /> */}
+          <Navbar title={this.props.chatName} back />
           <GiftedChat
                   bottomOffset={css.isIphoneX()?85:0}
                   messages={this.props.messages}
@@ -272,6 +274,7 @@ class Chat extends Component {
                   timeFormat='LT'
                   dateFormat='LL'
                   onSend={message =>{
+               
                    message[0].createdAt = (new Date()).getTime()
                     this.setState({
                       currentMessageText:message[0]
@@ -285,7 +288,7 @@ class Chat extends Component {
                       if(_this.props.path == "messages/"){
                       
                           _this.props.addToChatsInDataBase(_this.state.currentMessageText); 
-                          _this.props.sendPushNotification(_this.state.currentMessageText)
+                         // _this.props.sendPushNotification(_this.state.currentMessageText)
                        
                         
                       }

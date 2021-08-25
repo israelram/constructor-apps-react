@@ -4,7 +4,7 @@
   daniel@mobidonia.com
 */
 import React, { Component } from "react";
-import { Platform, Text, View, TouchableOpacity, StyleSheet, ScrollView, AsyncStorage, Share, Linking, UIManager, FlatList, ImageBackground, Image, Dimensions } from "react-native";
+import { Platform, View, TouchableOpacity, StyleSheet, ScrollView, AsyncStorage, Share, Linking, UIManager, FlatList, ImageBackground, Image, Dimensions } from "react-native";
 import Navbar from '@components/Navbar';
 import firebase from '@datapoint/Firebase';
 import css from '@styles/global';
@@ -13,7 +13,7 @@ import Photos from '@detailcomponents/Photos';
 import Player from '@detailcomponents/Player';
 import CheckBoxes from '@detailcomponents/CheckBoxes';
 import Description from '@detailcomponents/Description';
-import Button from '@uniappbuttons/Button';
+//import Button from '@uniappbuttons/Button';
 import Counter from '@components/Counter';
 import Picker from '@uniappbuttons/Picker';
 import fun from '@functions/common';
@@ -33,11 +33,20 @@ import StarRating from 'react-native-star-rating';
 import SmartIcon from '@smarticon';
 import Smartrow from '@smartrow'
 import Shadow from "../Components/Theme/Shadow";
+import Select from "@components/Select"
 const ConditionalWrap = ({ condition, wrap, children }) => condition ? wrap(children) : children;
 const ConditionalDisplay = ({ condition, children }) => condition ? children : <View></View>;
 const soundObject = new Audio.Sound();
 
-const { width, height, scale } = Dimensions.get("window")
+
+const { width, height, scale } = Dimensions.get("screen")
+
+import Icon from './../Components/Icon';
+import { Toast, Block, Text, theme, Button} from 'galio-framework';
+import { materialTheme } from './../../constants';
+import { HeaderHeight } from "./../../constants/utils";
+
+const thumbMeasure = (width - 48 - 32) / 3;
 
 
 //@connectActionSheet
@@ -69,6 +78,7 @@ export default class Details extends Component {
       numReview: this.props.navigation.state.params ? this.props.navigation.state.params.data.numReview : 0,
       currentUserID: "",
       photos: [],
+      showOrdeUpdated: false,
     }
 
 
@@ -123,6 +133,7 @@ export default class Details extends Component {
       }
       setTimeout(() => {
         this.setState({ stream: this.getExpectedValue('streamLink', true, this.props.data.detailsSetup.fields.streamLink) });
+        //alert(this.getExpectedValue('streamLink', true, this.props.data.detailsSetup.fields.streamLink))
         setTimeout(() => {
           if (this.props.data.detailsSetup.isHavingStream) {
             Audio.setAudioModeAsync({
@@ -208,11 +219,11 @@ export default class Details extends Component {
             if (item == null) {
               if (this.props.data.objectIdToShow) {
                 if (doc.id == this.props.data.objectIdToShow) {
-                  item = JSON.parse(doc._document.data.toString());
+                  item = doc.data();
                   item.id = doc.id;
                 }
               } else {
-                item = JSON.parse(doc._document.data.toString());
+                item = doc.data();
                 item.id = doc.id;
               }
 
@@ -321,6 +332,8 @@ export default class Details extends Component {
 
     //Get reference to FireStore
     var db = firebase.firestore();
+    
+
     var ref = db.collection(firstCollectionName).doc(documentID).collection(secondCollectionName);
 
     //Place to store the data
@@ -337,7 +350,7 @@ export default class Details extends Component {
 
               if (doc.data().status == "approved") {
 
-                var objToAdd = JSON.parse(doc._document.data.toString());
+                var objToAdd = doc.data();
                 //Add the id, on each object, easier for referencing
                 objToAdd.id = doc.id;
                 data.push(objToAdd);
@@ -348,7 +361,7 @@ export default class Details extends Component {
 
             }
             else {
-              var objToAdd = JSON.parse(doc._document.data.toString());
+              var objToAdd = doc.data();
               //Add the id, on each object, easier for referencing
               objToAdd.id = doc.id;
               data.push(objToAdd);
@@ -486,11 +499,16 @@ export default class Details extends Component {
   }
 
   createThePhotos() {
-    if (this.props.data.detailsSetup.showPhotos && this.state.photos && this.state.photos.length > 0 && this.props.data.detailsSetup.hideHeader) {
-      return (<Photos onPress={this.handelPhotoClick} title={this.props.data.detailsSetup.photosTitle} isVertical={this.props.data.detailsSetup.photosVertical} photos={this.state.photos} />)
+    if (this.props.data.detailsSetup.showPhotos && this.state.photos && this.state.photos.length > 0) {
+      return (
+        <Photos 
+          onPress={this.handelPhotoClick} 
+          title={this.props.data.detailsSetup.photosTitle} 
+          isVertical={this.props.data.detailsSetup.photosVertical}
+          photos={this.state.photos} />
+        )
     } else {
-
-      return (<View></View>)
+      return null
     }
   }
 
@@ -569,11 +587,18 @@ export default class Details extends Component {
   createThePrice() {
     if (this.props.data.detailsSetup.isShopping) {
       if (this.state.selectedVariant && this.state.hasVariant) {
-        return (<Description
-          title={this.applyFunctions(this.state.selectedVariant.price, this.props.data.detailsSetup.fields.priceFunctions)}
-          text={this.applyFunctions(this.state.selectedVariant.price, this.props.data.detailsSetup.fields.subPriceFunctions)} />)
-      } else {
-        return (<View><Description title={T.price} text={T.no_variant_available} /></View>)
+        return (
+          <Block>
+            <Text h5>{this.applyFunctions(this.state.selectedVariant.price, this.props.data.detailsSetup.fields.priceFunctions)}</Text>
+          </Block>
+        )
+      }else{
+        return (
+          <Block>
+            <Text h5>{T.price}</Text>
+            <Text p muted size={15}> {T.no_variant_available} </Text>
+          </Block>
+          )
       }
     } else {
       return (<View></View>)
@@ -599,26 +624,28 @@ export default class Details extends Component {
   createTheOptions() {
     //Referece to this
     var _this = this;
-    if (this.state.selectedInitialVariant) {
+    if (this.state.selectedInitialVariant&&_this.state.options) {
       //Retunr pickers
-      return (<View>{
+      return (<Block row space="evenly">{
         Object.keys(_this.state.options).map(function (keyOfItem, index) {
           if (_this.state.selectedInitialVariant[keyOfItem]) {
             return (
-              <Picker
-                key={keyOfItem}
-                callback={_this.searchForVariant}
-                theKey={keyOfItem}
-                option={_this.state.options[keyOfItem]}
-                selectedVariant={_this.state.selectedInitialVariant}
-              >
-              </Picker>);
+              
+              <Block flex left>
+                <Text p muted>{_this.state.options[keyOfItem].name}</Text>
+                <Select
+                  defaultIndex={0} 
+                  options={_this.state.options[keyOfItem].values}
+                  onSelect={(selectedIndex)=>{_this.searchForVariant(keyOfItem,_this.state.options[keyOfItem].values[selectedIndex])}}>
+                </Select>
+              </Block>
+              )
           } else {
             return <View key={keyOfItem}></View>
           }
 
         })
-      }</View>)
+      }</Block>)
     } else {
       //Return empty
       return (<View></View>)
@@ -702,11 +729,18 @@ export default class Details extends Component {
       } else {
         //Now add it to cart - normal shoping
         Cart.addCartContent(theItemToBeAdded, function (d, e) {
-
           _this.setState({
             productAdded: true,
-            cart: d
+            cart: d,
+            showOrdeUpdated:true
           });
+
+
+          setTimeout(()=>{
+            _this.setState({
+              showOrdeUpdated:false
+            });
+          },3000)
         })
       }
 
@@ -725,6 +759,8 @@ export default class Details extends Component {
   */
   searchForVariant(option, value) {
     //Get the current selection
+    //alert("Option:"+option+"   value:"+value);
+   // alert(value)
     var currentSelection = JSON.parse(JSON.stringify(this.state.selectedVariant));
 
     //Find old option value
@@ -758,6 +794,41 @@ export default class Details extends Component {
 
   showShoping() {
     if (this.props.data.detailsSetup.isShopping) {
+      if(this.state.selectedVariant && this.state.hasVariant){
+        return (
+          <Block>
+            <Block>{this.createTheOptions()}</Block>
+            {/*<Block row flex space={'around'} style={{marginTop:15}}>
+              <Block flex left>
+                <Text p muted>{T.quantity.replace(":","")}</Text>
+                <Select
+                    defaultIndex={0}
+                    options={[1, 2, 3, 4, 5]}
+                    style={styles.shadow}
+                    onSelect={(i)=>{this.qtyCallback(parseInt(i)+1)}}
+                  />
+              </Block>
+        </Block>*/}
+            
+            <Block row flex space={'around'} style={{marginTop:15, marginBottom:20}}>
+              <Block center>
+                <Button style={[styles.button, styles.shadow,{backgroundColor:materialTheme.COLORS.BUTTON_COLOR}]} onPress={this.addToCart}>
+                  {T.add_to_cart.toUpperCase()}
+                </Button>
+              </Block>
+            </Block>
+          </Block>
+          
+        )
+      }else{
+        return (
+          <Block>
+            <Block>{this.createTheOptions()}</Block>
+          </Block>
+          
+        )
+      }
+      
       return (
         <View>
           <View style={css.layout.orderOption}>
@@ -777,7 +848,7 @@ export default class Details extends Component {
         </View>
       )
     } else {
-      return (<View></View>)
+      return null
     }
   }
 
@@ -885,10 +956,13 @@ export default class Details extends Component {
   addCurrentItemInFavorites() {
     //Now add it to cart
     var _this = this;
+    
     Cart.addFavoritesContent(this.props.navigation.state.params.data, "favorites", function (d, e) {
+      //alert("Add in favorits done")
       _this.setState({
         navButtonActonDone: true,
       });
+      
     })
   }
 
@@ -918,10 +992,10 @@ export default class Details extends Component {
   * Receive the click on the navigation button
   */
   handlePressOnNavButton() {
-
     if (this.state.navButtonActonDone) {
 
       if (this.props.data.detailsSetup.navButtonAction == "add-to-favorites") {
+  
         this.removeCurrentItemInFavorites();
       } else {
         alert("Unknown action")
@@ -1206,6 +1280,7 @@ export default class Details extends Component {
               onPress={() => {
 
                 var db = firebase.firestore();
+
                 var docRef = db.collection(this.props.data.listingSetup.data_point).doc(this.props.navigation.state.params.data.id);
 
                 docRef.delete().then(function () {
@@ -1252,6 +1327,85 @@ export default class Details extends Component {
         })
       }
     }
+
+    return (
+      <Block flex style={styles.details}>
+        <Block flex>
+          <ImageBackground 
+            style={styles.profileContainer}
+            imageStyle={styles.profileImage} 
+            source={{uri: this.getExpectedValue('image', false)}}>
+              <Block flex style={styles.profileDetails}>
+                <LinearGradient colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.5)']} style={styles.gradient} />
+              </Block>
+            </ImageBackground>
+            <View style={{position: 'absolute',top:0,left:0,width:width}}>
+              <Navbar
+                    navigation={this.props.navigation}
+                    title=""
+                    back={!(this.props.data.goDirectlyToDetails && !this.props.navigation.state.params)}
+                    white
+                    transparent
+                    showRightButton={this.props.data.detailsSetup.showNavButton && showRightActionButton}
+                    rightButton={this.state.navButtonActonDone ? this.props.data.detailsSetup.navButtonActionDoneIcon : this.props.data.detailsSetup.navButtonIconActiveIcon}
+                    rightAction={this.handlePressOnNavButton}
+                  />
+              <Toast isShow={this.state.showOrdeUpdated} positionIndicator="top">You have added this item in your cart.</Toast>
+            </View>
+        </Block>
+
+        
+
+        {/* DETAILS FROM NOW ON */}
+        <Block flex style={styles.detailsContent}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            
+            <Block flex>
+              {/** Title and Description */}
+              <Block style={{marginBottom:15}}>
+                <Text h4>{this.getExpectedValue('title')}</Text>
+                <Text p muted size={15}> {"\n"+this.getExpectedValue('description')} </Text>
+              </Block>
+
+               {/** RADIO  */}
+               <Block>{this.createTheStreamDetail()}</Block>
+
+              {/** Separator */}
+              <Block style={styles.separator} />
+
+              {/** INLINE PHOTOS */}
+              <Block>{this.createThePhotos()}</Block>
+
+               {/** Separator */}
+               <Block style={styles.separator} />
+
+              {/** PRICES */}
+              <Block style={{marginBottom:15}}>{this.createThePrice()}</Block>
+
+               {/** SHOPING  */}
+              <Block>{this.showShoping()}</Block>
+
+              
+
+            </Block>
+            
+
+            <Block style={{minHeight:100}}>
+              
+            </Block>
+           
+
+           
+
+
+            
+            
+           
+          </ScrollView>
+        </Block>
+
+      </Block>
+    )
     return (
       <View style={{ flex: 1 }} param={this.state.data}>
         <ConditionalWrap
@@ -1263,17 +1417,23 @@ export default class Details extends Component {
           >{children}</ImageBackground>}
         >
           <LinearGradient colors={bgGradient} style={[{ flex: 1 }, css.layout.containerBackground]}>
+            
             <Navbar
               navigation={this.props.navigation}
-              isRoot={this.props.data.goDirectlyToDetails && !this.props.navigation.state.params ? true : false}
+              title={this.getExpectedValue('title')}
+              back={!(this.props.data.goDirectlyToDetails && !this.props.navigation.state.params)}
+              transparent
+              white
+              /*isRoot={this.props.data.goDirectlyToDetails && !this.props.navigation.state.params ? true : false}
               detailsView={this.props.data.goDirectlyToDetails && !this.props.navigation.state.params ? false : true}
               //Hide right button if icon is favorites and is set to go directly in details
               showRightButton={this.props.data.detailsSetup.showNavButton && showRightActionButton}
               rightButton={this.state.navButtonActonDone ? this.props.data.detailsSetup.navButtonActionDoneIcon : this.props.data.detailsSetup.navButtonIconActiveIcon}
-              rightAction={this.handlePressOnNavButton}
+              rightAction={this.handlePressOnNavButton}*/
+              
             />
-
-            <ScrollView contentContainerStyle={css.detailsScroll}>
+            <ScrollView style={{marginTop:-50}} contentContainerStyle={[css.detailsScroll]}>
+            
               <View style={{ flex: 1 }}>
                 {/*
                 //In the new verssion 10, we are combinig header view with the images
@@ -1341,3 +1501,86 @@ export default class Details extends Component {
   }
 
 }
+
+const styles = StyleSheet.create({
+  separator:{
+    height:theme.SIZES.BASE
+  },
+  details: {
+    marginTop: Platform.OS === 'android' ? -HeaderHeight : 0,
+    marginBottom: -HeaderHeight * 2,
+  },
+  profileImage: {
+    width: width * 1.1,
+    height: 'auto',
+  },
+  profileContainer: {
+    width: width,
+    height: height / 2,
+  },
+  profileDetails: {
+    paddingTop: theme.SIZES.BASE * 4,
+    justifyContent: 'flex-end',
+    position: 'relative',
+  },
+  profileTexts: {
+    paddingHorizontal: theme.SIZES.BASE * 2,
+    paddingVertical: theme.SIZES.BASE * 2,
+    zIndex: 2
+  },
+  pro: {
+    backgroundColor: materialTheme.COLORS.LABEL,
+    paddingHorizontal: 6,
+    marginRight: theme.SIZES.BASE / 2,
+    borderRadius: 4,
+    height: 19,
+    width: 38,
+  },
+  seller: {
+    marginRight: theme.SIZES.BASE / 2,
+  },
+  detailsContent: {
+    position: 'relative',
+    padding: theme.SIZES.BASE,
+    marginHorizontal: theme.SIZES.BASE,
+    marginTop: -theme.SIZES.BASE * 7,
+    borderTopLeftRadius: 13,
+    borderTopRightRadius: 13,
+    backgroundColor: theme.COLORS.WHITE,
+    shadowColor: 'black',
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 8,
+    shadowOpacity: 0.2,
+    zIndex: 2,
+  },
+  thumb: {
+    borderRadius: 4,
+    marginVertical: 4,
+    alignSelf: 'center',
+    width: thumbMeasure,
+    height: thumbMeasure
+  },
+  gradient: {
+    zIndex: 1,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '30%',
+    position: 'absolute',
+  },
+  shadow: {
+    shadowColor: 'black',
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    shadowOpacity: 0.2,
+    elevation: 2,
+  },
+  button: {
+    marginBottom: theme.SIZES.BASE,
+    width: width - (theme.SIZES.BASE * 2),
+  },
+  contentContainer: {
+    paddingVertical: 20,
+    backgroundColor:"red"
+  }
+});

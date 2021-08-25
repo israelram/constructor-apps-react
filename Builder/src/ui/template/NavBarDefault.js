@@ -72,6 +72,9 @@ export default class NavBarDefault extends Component {
                 <ul className="dropdown-menu" role="menu">
                     <li><Link to="/account">{T.td("Account")}</Link></li>
                     <ConditionalDisplay condition={Config.isSaaS}>
+                        <li><Link to="/manage/pricing">Pricing</Link></li>
+                    </ConditionalDisplay>
+                    <ConditionalDisplay condition={Config.isSaaS}>
                         <li><Link to="/billing">{T.td("Billing")}</Link></li>
                     </ConditionalDisplay>
                     <li><Link to="settings/rab_saas_site">{T.td("Settings")}</Link></li>

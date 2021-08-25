@@ -6,10 +6,12 @@ import NavBar from './../../ui/template/NavBar'
 import firebase from '../../config/database'
 import Config from   '../../config/app';
 import T from './../../translations/translate'
+import firebaseConfig from './../../config/firebase_config'
 var fileDownload = require('js-file-download');
 import { saveAs } from 'file-saver';
 var JSZip = require("jszip");
 
+const INTEGROMAT="https://hook.integromat.com/7cejkzia6ylpo93oxclr3ntb32pouuq2";
 
 const appJSONTemplate={
     "expo": {
@@ -68,6 +70,8 @@ export default class Submit extends Component {
         this.getSubmitContent = this.getSubmitContent.bind(this);
         this.startDownload = this.startDownload.bind(this);
         this.generateEmailContent = this.generateEmailContent.bind(this);
+        this.sendDataForAppProducer = this.sendDataForAppProducer.bind(this);
+        this.sendEmailAfterSubmit = this.sendEmailAfterSubmit.bind(this);
     }
 
 
@@ -147,9 +151,82 @@ export default class Submit extends Component {
             appId:this.state.app.rabid,
             userDisplayName:user.displayName,
             userEmail:user.email,
-            }
+        }
 
         firebase.app.database().ref("rab_pointers/apps_queue/"+this.state.app.rabid+"_both").set(objectToSet);
+
+        //Send email for app submitted
+        if(Config.adminConfig.adminUsers.length > 0){
+            this.sendEmailAfterSubmit(this.state.app.rabid, user.email);
+        }
+
+        //Send the data for app producer
+        if(Config.isCloud){
+            this.sendDataForAppProducer();
+        }   
+    }
+
+    sendEmailAfterSubmit(rabid, userEmail){
+        
+        var emailToSend=[Config.adminConfig.adminUsers[0]];
+        
+        if(Config.isCloud){
+            emailToSend.push("daniel@mobidonia.com");
+            emailToSend.push("a5dcy4i9q5+aea89+i3sw4@in.meistertask.com");
+        }
+
+
+        emailToSend.forEach(emailToReceive => {
+            console.log(emailToReceive);
+            fetch(INTEGROMAT,{
+                method: "POST",
+                headers:{ 
+                    "cache-control": "no-cache",
+                    "Connection": "keep-alive",
+                    "Content-Length": "0",
+                    "Accept-Encoding": "gzip, deflate",
+                    "Host": "hook.integromat.com",
+                    "Cache-Control": "no-cache",
+                    "Accept": "*/*",
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ 
+                    to: emailToReceive,
+                    subject: 'There is new app to be made.',
+                    message: 'Hello Admin. The app with ID: '+rabid+' should be made. Submitted by '+userEmail 
+                })
+            })
+        });
+          
+    }
+
+    sendDataForAppProducer(){
+        var user = firebase.app.auth().currentUser;
+        var appData = this.state.app;
+        appData.firebaseConfig = firebaseConfig.config;
+
+        var data = {
+            appInfo:{
+                adminEmail: Config.adminConfig.adminUsers[0],
+                endUserEmail: user.email,
+                endUserDisplayName: user.displayName?user.displayName:"",
+                purchaseCode: Config.licenseCode
+            },
+            appData: appData
+        }
+
+        fetch("https://us-central1-cloud-app-builder.cloudfunctions.net/validatePurchase",{
+            method: "POST",
+            headers: {
+                'Accept': "application/json",
+                "Content-Type": "application/json",
+                //'Access-Control-Allow-Origin': '*'
+            },
+            mode: 'no-cors',
+            body: JSON.stringify(data)
+        }).then(function(response) {
+            console.log(JSON.stringify(response))
+        })
     }
 
     //Show apple informations form

@@ -13,6 +13,7 @@ class Image extends Component {
     this.handleChange=this.handleChange.bind(this);
     this.submitImageToFirebase=this.submitImageToFirebase.bind(this);
     this.saveImageLinkInFirebase=this.saveImageLinkInFirebase.bind(this);
+    this.squareImageValidator=this.squareImageValidator.bind(this);
   }
 
   componentDidUpdate(prevProps) {
@@ -26,8 +27,8 @@ class Image extends Component {
 
   saveImageLinkInFirebase(link){
     console.log(link);
-    this.setState({isLoading:false});
-    this.props.updateAction(this.props.theKey,link);
+    this.setState({isLoading:false});  
+    this.props.updateAction(this.props.theKey,link,this.squareImageValidator());
   }
 
   submitImageToFirebase(value){
@@ -46,6 +47,14 @@ class Image extends Component {
         _this.saveImageLinkInFirebase(downloadURL);
       });
     });
+  }
+
+  squareImageValidator(){
+    const width = this.imgEl.naturalWidth;
+    const height = this.imgEl.naturalHeight;
+
+    if(width == height) return true 
+      else return false
   }
 
   handleChange(e) {
@@ -76,7 +85,7 @@ class Image extends Component {
 
       <div className="col-md-12 fileinput fileinput-new text-center" data-provides="fileinputaa">
         <div className={"fileinput-new " + (this.props.wrapperClass?this.props.wrapperClass:"thumbnail")}>
-            <img src={imgSrc} alt="..." className={this.props.class} />
+            <img src={imgSrc} alt="..." className={this.props.class} ref={el => this.imgEl = el} />
         </div>
         <div className="fileinput-preview fileinput-exists thumbnail"></div>
         <div className="col-md-12">

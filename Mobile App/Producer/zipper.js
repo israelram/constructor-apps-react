@@ -5,7 +5,7 @@ var inquirer = require('inquirer');
 const fs = require('fs');
 var exec = require('./lib/exec');
 
-const projects= ["all","businessDirectory","chat","conference","events","news","nightClub","radio","recepie","restaurant","scanner","shop_regular",'shop_shopify'];
+const projects= ["chat","conference","news","nightClub","radio","recepie","restaurant","scanner","shop_regular"];
 
 
 /*
@@ -89,7 +89,8 @@ function dismisFiles(app,list){
     }else{
         projects.forEach(element => {
             if(element!=app){
-                list.push('*/DemoData/'+element+".js*");
+                list.push('*/SetupData/'+element+".js*");
+                list.push('*/AdminData/'+element+".js*");
             }
         });
     }
@@ -110,7 +111,8 @@ function zipAppFor(app){
         '*.gitignore*',
         '*.watchmanconfig*',
         '*Dockerfile*',
-        '*package-lock.json*'
+        '*info.txt*',
+        '*service-account-file.json*'
     ];
     dismisFiles(app,filesToExclude);
     makeAZipCommand(app,filesToExclude);

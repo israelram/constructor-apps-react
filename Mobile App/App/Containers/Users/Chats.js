@@ -11,9 +11,12 @@ import Smartrow from '@smartrow'
 import SearchBar from "@components/SearchBar/SearchBar"
 import AppEventEmitter from "@functions/emitter"
 import Login from '@containers/Users/LoginScreen'
+import Empty from '@components/Empty'
+import T from '@functions/translation'
+
 export default class ListOfUsers extends Component {
   //Key extractor for the Flat list
-  _keyExtractor = (item, index) => index;
+  _keyExtractor = (item, index) => item.key;
 
   //The constructor
   constructor(props) {
@@ -32,7 +35,7 @@ export default class ListOfUsers extends Component {
       isLoggedIn:false,
       waitingForStatus:true,
       refresh:false,
-      
+      chatsLocaded:false,
     }
 
     //Bind functions
@@ -90,15 +93,16 @@ export default class ListOfUsers extends Component {
 
   /**
   * searchChange - on search
-  * @param {String} e, the entered string
+  * @param {String} searchString, the entered string
   */
-  searchChange(e){
-    if(e.length==0){
+  searchChange(searchString){
+    if(searchString.length==0){
       //User has removed all the string, or it has
       this.setState({items:this.state.itemsStore,selected:"all"})
-    }else if(e.length>2){
+    }else if(searchString.length>2){
       //Do filter
-      var filtered=this.state.itemsStore.filter(function (el) {return el.username.toLowerCase().indexOf(e.toLowerCase())>-1});
+      alert((searchString).toLowerCase())
+      var filtered=this.state.itemsStore.filter(function (el) {return el.name?(el.name+"").toLowerCase().indexOf((searchString).toLowerCase())>-1:false});
       this.setState({items:filtered})
     }
   }
@@ -118,6 +122,7 @@ export default class ListOfUsers extends Component {
         snapshot.forEach(childSnap=>{
             var user=childSnap.val();
             user.uid=childSnap.key;
+            user.key=childSnap.key+(new Date()).getTime();
             data.push(user)
         })
 
@@ -125,8 +130,8 @@ export default class ListOfUsers extends Component {
              items:[],
              items:data.reverse(),
              itemsStore:data,
-             refresh:!_this.state.refresh
-             
+             refresh:!_this.state.refresh,
+             chatsLocaded:true
             });
     });
   }
@@ -165,7 +170,8 @@ export default class ListOfUsers extends Component {
       // here also add the group of ids
       this.props.navigation.navigate('Chat', {chatID:item.uid,path:"messages/",groupChatIds:item.usersInTheChat,groupChatName:item.name,groupAvatar:item.avatar});
     }else{
-      this.props.navigation.navigate('Chat', {selectedUser:item.uid,path:"messages/"});
+      var chatID=firebase.auth().currentUser.uid[0]>item.uid[0]?firebase.auth().currentUser.uid+item.uid:item.uid+firebase.auth().currentUser.uid
+      this.props.navigation.navigate('Chat', {title:item.name,selectedUser:item.uid,chatID:chatID,path:"messages/"});
     }
   }
 
@@ -175,11 +181,18 @@ export default class ListOfUsers extends Component {
     return (
         <View style={[css.layout.containerBackground,{flex:1}]}>
 
-            <Navbar navigation={this.props.navigation} isRoot={this.state.isRoot} showRightButton={true} rightButton={"FeEdit"} rightAction={this.showHideSearch} />
-            
-           
-              <SearchBar  ref={search => this.search = search} onChangeText={this.searchChange}  />
-           
+            <Navbar 
+              navigation={this.props.navigation} 
+              isRoot={this.state.isRoot} 
+              title={this.props.data.name}
+              hasSearch={false}
+              seachPlaceholder={"Search your list of chats"}
+              searchCallback={this.searchChange} 
+              showRightButton
+              rightButton={'plus-circle'}
+              rightAction={()=>{this.props.navigation.navigate('ListOfUsers')}}/>
+          
+            <Empty text={T.no_items} isChatImage={true} hide={!(this.state.chatsLocaded&&this.state.items.length==0)} />
 
             <FlatList
               style={{ flex: 1 }}

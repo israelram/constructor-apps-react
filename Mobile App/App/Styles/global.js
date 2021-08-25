@@ -250,10 +250,11 @@ exports.layout=StyleSheet.create({
     left: 0,
     bottom: 10,
     width: width,
-    height: 150,
+    //height: 150,
     backgroundColor: "rgba(0,0,0,0)",
-    flexDirection: 'row',
-    alignItems: 'center',
+    //flexDirection: 'row',
+    //alignItems: 'center',
+    //backgroundColor:"red"
   },
   modalContent: {
     backgroundColor: 'white',
@@ -272,7 +273,8 @@ exports.layout=StyleSheet.create({
     marginRight: 20, 
     marginBottom: 0, 
     backgroundColor: "white", 
-    flexDirection: 'column'
+    flexDirection: 'column',
+    paddingVertical:10
   },
   orderName:{
     marginTop: 15, 
@@ -699,7 +701,7 @@ exports.layout=StyleSheet.create({
     textAlign:'center',
   },
   streamView:{
-    marginTop:15,
+    marginTop:0,
     marginLeft:5, 
     marginRight:5,
     justifyContent:'center',

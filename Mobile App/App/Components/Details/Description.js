@@ -3,6 +3,7 @@ import {Text, View,  UIManager, ScrollView, Dimensions,Linking } from "react-nat
 import css from '@styles/global'
 import theme from './../Theme/theme';
 import HTML from 'react-native-render-html';
+import { Block } from "galio-framework";
 
 
 
@@ -26,6 +27,7 @@ export default class Description extends Component {
   render() {
       const rtlText = this.state.rtl && { textAlign: 'right', writingDirection: 'rtl' };
       const rtlView = this.state.rtl && { flexDirection: 'row-reverse' };
+     
     return (
       <View style={[{margin:20,marginLeft:10,marginRight:10},rtlText]}>
         <Text style={[theme.sectionHeaderTitle,{marginBottom:5},rtlText]}>{this.props.title}</Text>

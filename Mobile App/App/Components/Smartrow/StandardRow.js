@@ -66,22 +66,22 @@ export default class StandardRow extends Component {
   render() {
     return (
       <View>
-        <View style={[style.standardRow,{backgroundColor:css.dynamic.rows.backgroundColor}]}>
+        <View style={[style.standardRow,{backgroundColor:"white"}]}>
           <View style={style.standardRowImageIconArea} >
             <Image style={style.userImage} source={this.props.image != ""?{uri:this.props.image}:require('@images/blank-image.jpg')} />
           </View>
           {this.chatOrListofUsersView()}
           <ConditionalDisplay condition={this.props.from == null}>
           <View style={style.standardRowTitleArea} >
-              <Text  style={[{color:css.dynamic.rows.titleColorOnRow}]} >{this.props.title}</Text>
+              <Text >{this.props.title}</Text>
           </View>
           <View style={style.standardRowArrowArea}>
-              <MaterialIcons name={"navigate-next"} size={24} style={{ color: css.dynamic.rows.arrowColor }} />
+              <MaterialIcons name={"navigate-next"} size={24} style={{ color: "black" }} />
           </View>
           </ConditionalDisplay>
          
        </View>
-        <View style={[style.standardRowSeparator,{backgroundColor:css.dynamic.rows.backgroundColor}]}><View style={[style.border,{backgroundColor:css.dynamic.rows.separatorColor}]} ></View></View>
+        <View style={[style.standardRowSeparator]}><View style={[style.border]} ></View></View>
         </View>
        
     );

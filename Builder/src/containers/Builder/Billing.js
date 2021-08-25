@@ -115,8 +115,8 @@ export default class Billing extends Component {
     var _this = this;
     firebase.app.database().ref('/rab_saas_site/pricing').on('value',function(snapshot) {
       _this.setState({
-        plans: snapshot.val().plans,
-        vendorID: snapshot.val().vendorID
+        plans: snapshot.val().plans?snapshot.val().plans:{},
+        vendorID: snapshot.val().vendorID?snapshot.val().vendorID:""
       },() => window.initPaddle(snapshot.val().vendorID)
       )
     });
@@ -171,7 +171,7 @@ export default class Billing extends Component {
                     <div className="col-md-10 col-md-offset-1" >{
                         this.state.plans.length > 0?this.state.plans.map((plan) => {
                           return this.setUpBillingInfo(plan, this.state.subscription);
-                        }):""
+                        }):<div><h2>Pricing plans will be added soon. Come back again!</h2></div>
                       }
                     </div>
                 </div>

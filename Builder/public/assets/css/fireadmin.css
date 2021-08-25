@@ -24,9 +24,12 @@ html, body, #root, .main {
  
  .pushText {
     position: absolute;
-    top: 424px;
-    left: 120px;
-    width: 60%;
+    /*top: 424px;
+    left: 120px;*/
+    top: 43%;
+    left: 25%;
+    /*width: 60%;*/
+    width: 43%;
     font-size:16px;
     color: black;
  }
@@ -203,6 +206,19 @@ html, body, #root, .main {
 
 .img-preview{
    width: 70% !important;
+}
+
+/*NAV PILS IN PREVIEW APP*/
+.nav-pills {
+   width: 100%;
+   text-align: center;
+}
+.nav-pills>li {
+   float: initial;
+ line-height: 150px;
+}
+.nav-pills>li {
+   display:inline-block;
 }
 
 

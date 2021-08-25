@@ -3,7 +3,7 @@ Created by Dimov Daniel
 Mobidonia
 */
 import React from "react";
-import { View, TouchableOpacity, FlatList, ImageBackground } from "react-native";
+import { View, TouchableOpacity, FlatList, ImageBackground,StyleSheet,Dimensions} from "react-native";
 import Navbar from '@components/Navbar'
 import firebase from '@datapoint/Firebase'
 import css from '@styles/global'
@@ -17,7 +17,8 @@ import MapView, {
 } from 'react-native-maps';
 
 const ConditionalWrap = ({ condition, wrap, children }) => condition ? wrap(children) : children;
-
+const { width, height, scale } = Dimensions.get("screen")
+import { Toast, Block, Text, theme, Button} from 'galio-framework';
 
 
 export default class MapScreen extends React.Component {
@@ -91,13 +92,19 @@ export default class MapScreen extends React.Component {
         snapshot
           .docs
           .forEach(doc => {
-            var objToAdd = JSON.parse(doc._document.data.toString());
+            var objToAdd = doc.data();
             //Add the id, on each object, easier for referencing
             objToAdd.id = doc.id;
             objToAdd.displayIndex = i;
             i++;
             ids.push(doc.id);
-            var asString = JSON.stringify(objToAdd);
+            var asString = "";
+            Object.keys(objToAdd).map((key) => {
+              console.log(key);
+              if (typeof objToAdd[key] !== 'object') {
+                asString += objToAdd[key];
+              }
+            })
             asString = asString.replace(new RegExp('"', 'g'), '');
             asString = asString.replace(new RegExp('{', 'g'), '');
             asString = asString.replace(new RegExp('}', 'g'), '');
@@ -151,12 +158,19 @@ export default class MapScreen extends React.Component {
   renderItem(data) {
     //We have our real data in data.item since FlatList wraps the data
     var item = data.item;
-
     return (
-      <TouchableOpacity onPress={() => { this.openDetails(item) }}>
-        <Smartrow isListing={true} item={item} display={this.state.pr} showRating={this.state.pr.listingSetup.showRating}>
+      <Block flex style={styles.rowHolder}>
+        <TouchableOpacity onPress={() => { this.openDetails(item) }}>
+        <Smartrow 
+          isListing={true} 
+          item={item} 
+          display={this.state.pr} 
+          showRating={this.state.pr.listingSetup.showRating}
+        >
         </Smartrow>
       </TouchableOpacity>
+      </Block>
+      
     )
   }
 
@@ -184,15 +198,9 @@ export default class MapScreen extends React.Component {
       }
     }
     return (
-      <ConditionalWrap
-        condition={shouldWeShowImageBg}
-        wrap={children => <ImageBackground
-          source={require('@images/bg.jpg')}
-          style={[css.layout.imageBackground, { flex: 1 }]}
-        >{children}</ImageBackground>}
-      >
-        <LinearGradient colors={bgGradient} style={[{ flex: 1 }, css.layout.containerBackground]}>
-          <Navbar navigation={this.props.navigation} isRoot={true} showRightButton={false} />
+
+        <Block flex>
+          <Navbar navigation={this.props.navigation} isRoot={true} showRightButton={false}  title={this.state.title}/>
           <MapView
             ref={ref => { this.map = ref; }}
             style={{ flex: 1 }}>
@@ -207,22 +215,26 @@ export default class MapScreen extends React.Component {
               >
               </Marker>
             ))}
-
           </MapView>
-          <View style={css.layout.mapOverlay}>
+          <Block style={[css.layout.mapOverlay]}>
             <FlatList
               ref={ref => { this.flatList = ref; }}
-              style={{ marginBottom: 0 }}
+              style={{ height:160,marginBottom: 0,padding:theme.SIZES.BASE/2}}
               data={this.state.items}
               horizontal={true}
               keyExtractor={this._keyExtractor}
               renderItem={this.renderItem}
             />
-          </View>
-        </LinearGradient>
-      </ConditionalWrap>
+          </Block>
+        </Block>
 
     );
   }
 
 }
+
+const styles = StyleSheet.create({
+  rowHolder:{
+    width:width-(theme.SIZES.BASE)
+  }
+})

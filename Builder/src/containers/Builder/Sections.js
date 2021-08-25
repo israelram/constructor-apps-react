@@ -623,8 +623,10 @@ getSlug(){
         <Image 
           parentKey="image" 
           options={{}} 
-          updateAction={(key,value)=>{
-            this.saveAppInfo("appImage",value);
+          updateAction={(key,value, validator)=>{
+            if(validator){
+              this.saveAppInfo("appImage",value);
+            }else alert("Image must be square")
           }} 
           class="" 
           theKey="image"  

@@ -26,7 +26,7 @@ class Create extends Component {
         name:"",
         id:"",
         type:"shop",
-        layout:"tabs",
+        layout:"side",
         color:"#000000",
         appsMade: 0,
         appsAllowed: Config.isSaaS?0:9999,
@@ -37,7 +37,7 @@ class Create extends Component {
     }
     this.printApps=this.printApps.bind(this);
     this.cloneApp=this.cloneApp.bind(this);
-    this.createStep2Content=this.createStep2Content.bind(this);
+    //this.createStep2Content=this.createStep2Content.bind(this);
     this.checkAppCreate=this.checkAppCreate.bind(this);
     this.checkCreateUserPermission = this.checkCreateUserPermission.bind(this);
     this.getPlans = this.getPlans.bind(this);
@@ -205,7 +205,7 @@ class Create extends Component {
 
         appToBeSaved.name=to;
         appToBeSaved.slug=slug;
-        appToBeSaved.id=id;
+        appToBeSaved.id=id.trim();
         appToBeSaved.rabid=rabid;
         appToBeSaved.design.general.layout=layout;
 
@@ -235,7 +235,7 @@ class Create extends Component {
                 //Move to next tab and set selected
                 this.setState({
                     type:key,
-                    stepsActivity:["","active",""]})}}
+                    stepsActivity:["","active"]})}}
             isIcon={false}
             subTitle={""}
             title={appData.name}
@@ -306,7 +306,7 @@ class Create extends Component {
     return(<div className="row">{this.printApps()}</div>)
   }
 
-  createStep2Content(){
+  /*createStep2Content(){
     return(<div className="row">
        
             <Tile 
@@ -330,7 +330,7 @@ class Create extends Component {
                 buttonTitle={T.td("Use this layout")}
             />
     </div>)
-  }
+  }*/
 
   checkIsSuperAdmin(){
     var isSuperAdmin = false;
@@ -366,14 +366,14 @@ class Create extends Component {
                             label1:T.ts("Select the app type"),
                             label2:T.ts("What kind of app you will make?"),
                             content:this.createStep1Content()
-                        },{
+                        },/*{
                             name:"layout",
                             icon:"drag_indicator",
                             title:T.td("Layout"),
                             label1:T.ts("Select the app layout"),
                             label2:T.ts("What kind of app you will make?"),
                             content:this.createStep2Content()
-                        },
+                        },*/
                         {
                             name:"overview",
                             icon:"check_circle_outline",
@@ -458,14 +458,14 @@ class Create extends Component {
                                 label1:T.ts("Select the app type"),
                                 label2:T.ts("What kind of app you will make?"),
                                 content:this.createStep1Content()
-                            },{
+                            },/*{
                                 name:"layout",
                                 icon:"drag_indicator",
                                 title:T.td("Layout"),
                                 label1:T.ts("Select the app layout"),
                                 label2:T.ts("What kind of app you will make?"),
                                 content:this.createStep2Content()
-                            },
+                            },*/
                             {
                                 name:"overview",
                                 icon:"check_circle_outline",

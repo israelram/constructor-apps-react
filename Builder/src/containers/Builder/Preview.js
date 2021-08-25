@@ -1,4 +1,5 @@
 /*eslint no-unused-vars: "off"*/
+/* eslint-disable */
 import React, {Component} from 'react'
 import NavBar from './../../ui/template/NavBar'
 import 'react-sortable-tree/style.css'; // This only needs to be imported once in your app
@@ -63,14 +64,20 @@ class Preview extends Component {
 
   saveScreenshotIphone(){
     console.log("Get dScreenshot")
+    var iframeAndroid = document.getElementById('theAndroidFrameAppetize');
+    iframeAndroid.contentWindow.postMessage('saveScreenshot', '*');
+  }
+
+  saveScreenshotIphone(){
+    console.log("Get dScreenshot")
     var iframeIphone = document.getElementById('theiPhoneFrameAppetize');
     iframeIphone.contentWindow.postMessage('saveScreenshot', '*');
   }
 
   saveScreenshotIpad(){
     console.log("Get iPad dScreenshot")
-    var iframeIphone = document.getElementById('theiPadFrameAppetize');
-    iframeIphone.contentWindow.postMessage('saveScreenshot', '*');
+    var iframeIpad = document.getElementById('theiPadFrameAppetize');
+    iframeIpad.contentWindow.postMessage('saveScreenshot', '*');
   }
 
   getAppLink(){
@@ -85,26 +92,31 @@ class Preview extends Component {
   }
 
 
-  getPreviewContentWebOld(){
+  getPreviewContentWeb(){
     return (
       <div className="card-content">
         <ul className="nav nav-pills nav-pills-rose">
+         
           <li className="active">
             <a href="#pill1" data-toggle="tab">iPhone</a>
           </li>
           <li>
             <a href="#pill2" data-toggle="tab">iPad</a>
           </li>
+          <li >
+            <a href="#pill3" data-toggle="tab">Android</a>
+          </li>
         </ul>
         <div className="tab-content">
+          
           <div className="tab-pane active" id="pill1">
             <div className="col-md-12" style={{'marginBottom':'20px'}}>
-              <a onClick={()=>{this.saveScreenshotIphone()}} className={"btn "+Config.designSettings.submitButtonClass}>Take Screenshot</a>
+              <a onClick={()=>{this.saveScreenshotIphone()}} className="btn">Take Screenshot</a>
             </div>
             <p><h3>{T.ts("Unique ID")+":"+this.state.uniqueID}</h3></p>
             <br />
             <iframe id="theiPhoneFrameAppetize"
-              src="https://appetize.io/embed/8bnmakzrptf1hv9dq7v7bnteem?autoplay=false&debug=false&device=iphonex&deviceColor=black&embed=true&orientation=portrait&screenOnly=false&xDocMsg=true&xdocMsg=true&params=%7B%22EXKernelLaunchUrlDefaultsKey%22:%22exp:%2F%2Fexp.host%2F@dimovdaniel%2Fappbuilderonline%22,%22EXKernelDisableNuxDefaultsKey%22:true%7D&osVersion=11.4" 
+              src="https://appetize.io/embed/8bnmakzrptf1hv9dq7v7bnteem?autoplay=false&debug=false&device=iphonex&deviceColor=black&embed=true&orientation=portrait&screenOnly=false&xDocMsg=true&xdocMsg=true&params=%7B%22EXKernelLaunchUrlDefaultsKey%22:%22exp:%2F%2Fexp.host%2F@dimovdaniel%2Funiexpopreviewnd%22,%22EXKernelDisableNuxDefaultsKey%22:true%7D&osVersion=11.4" 
               width="313px" height="800px" frameBorder="0" scrolling="no"></iframe>
             <div>
             </div>
@@ -112,13 +124,26 @@ class Preview extends Component {
           </div>
           <div className="tab-pane" id="pill2">
             <div className="col-md-12" style={{'marginBottom':'20px'}}>
-              <a onClick={()=>{this.saveScreenshotIpad()}} className={"btn "+Config.designSettings.submitButtonClass}>Take Screenshot</a>
+              <a onClick={()=>{this.saveScreenshotIpad()}} className="btn">Take Screenshot</a>
             </div>
             <p><h3>{T.ts("Unique ID")+":"+this.state.uniqueID}</h3></p>
             <br />
             <iframe id="theiPadFrameAppetize"
-              src="https://appetize.io/embed/8bnmakzrptf1hv9dq7v7bnteem?autoplay=false&debug=false&device=ipad&deviceColor=black&embed=true&orientation=portrait&screenOnly=false&xDocMsg=true&xdocMsg=true&params=%7B%22EXKernelLaunchUrlDefaultsKey%22:%22exp:%2F%2Fexp.host%2F@dimovdaniel%2Fappbuilderonline%22,%22EXKernelDisableNuxDefaultsKey%22:true%7D&osVersion=11.4" 
+              src="https://appetize.io/embed/8bnmakzrptf1hv9dq7v7bnteem?autoplay=false&debug=false&device=ipad&deviceColor=black&embed=true&orientation=portrait&screenOnly=false&xDocMsg=true&xdocMsg=true&params=%7B%22EXKernelLaunchUrlDefaultsKey%22:%22exp:%2F%2Fexp.host%2F@dimovdaniel%2Funiexpopreviewnd%22,%22EXKernelDisableNuxDefaultsKey%22:true%7D&osVersion=11.4" 
               width="450px" height="700px" frameBorder="0" scrolling="no"></iframe>
+            <div>
+            </div>
+            <br /><br /><br />
+          </div>
+          <div className="tab-pane" id="pill3">
+            <div className="col-md-12" style={{'marginBottom':'20px'}}>
+              <a onClick={()=>{this.saveScreenshotAndroid()}} className="btn">Take Screenshot</a>
+            </div>
+            <p><h3>{T.ts("Unique ID")+":"+this.state.uniqueID}</h3></p>
+            <br />
+            <iframe id="theAndroidFrameAppetize"
+              src="https://appetize.io/embed/xc1w6f1krd589zhp22a0mgftyw?autoplay=false&debug=false&device=nexus5&deviceColor=black&embed=true&launchUrl=exp://exp.host/@dimovdaniel/uniexpopreviewnd&orientation=portrait&screenOnly=false&xDocMsg=true&xdocMsg=true&params=%7B%22EXKernelLaunchUrlDefaultsKey%22:%22exp:%2F%2Fexp.host%2F@dimovdaniel%2Funiexpopreviewnd%22,%22EXKernelDisableNuxDefaultsKey%22:true%7D" 
+              width="313px" height="800px" frameBorder="0" scrolling="no"></iframe>
             <div>
             </div>
             <br /><br /><br />
@@ -129,7 +154,7 @@ class Preview extends Component {
     )
   }
 
-  getPreviewContentWeb(){
+  getPreviewContentWebOld(){
     return(
       <div className="card-content">
         <div className="row">

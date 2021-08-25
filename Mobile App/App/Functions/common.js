@@ -1,5 +1,6 @@
 import moment from 'moment';
 import {Linking,Platform} from "react-native";
+var md5 = require('md5');
 
 class FunctionDirectorty {
 
@@ -33,6 +34,10 @@ class FunctionDirectorty {
 
 			}
 		});
+	}
+
+	gravatar(email,defaultImge="https%3A%2F%2Faffordableamericaninsurance.com%2Ffink-insurance%2Fwp-content%2Fuploads%2Fsites%2F82%2F2015%2F07%2Fno-image-300x300.png"){
+		return "https://www.gravatar.com/avatar/"+md5(email)+"?d="+defaultImge;
 	}
 
 

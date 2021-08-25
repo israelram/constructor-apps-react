@@ -47,7 +47,7 @@ export default class SelectableButton extends Component {
             {...this.props}
             color={this.props.tintToUse}
             fontFamily={this.props.isSelected?'lato-bold':'lato-regular'}
-            titleStyle={{fontSize:43,fontFamily:'lato-regular',color:this.props.tintToUse,textAlign: 'center'}}
+            titleStyle={{fontSize:18,fontFamily:'lato-regular',color:this.props.tintToUse,textAlign: 'center'}}
            
             onPress={this.handleThePress}
             buttonStyle={{

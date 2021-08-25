@@ -56,6 +56,9 @@ export default class HomeMaster extends Component {
                 <ul className="dropdown-menu" role="menu">
                     <li><Link to="/account">Account</Link></li>
                     <ConditionalDisplay condition={Config.isSaaS}>
+                        <li><Link to="/manage/pricing">Pricing</Link></li>
+                    </ConditionalDisplay>
+                    <ConditionalDisplay condition={Config.isSaaS}>
                         <li><Link to="/billing">Billing</Link></li>
                     </ConditionalDisplay>
                     <li><Link to="settings/rab_saas_site">Settings</Link></li>

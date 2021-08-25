@@ -39,7 +39,7 @@ exports.profileScreensInSubMenu=false;
 
 //ADS IDs
 // -------- Do you want ads to be shown - Controller from firebase ------ //
-exports.showBannerAds = true;
+exports.showBannerAds = false;
 exports.showinterstitialAds = true;
 
 // -------- Enter your adMob ids here - Controller from firebase  ------- //
@@ -50,15 +50,19 @@ exports.isTesting=false; //On ios device ads show only if you cpecifically set t
 
 //The Sendgrid KEY   --- CHANGE THEM WITH YOUR OWN SENDGRID
 exports.SENDGRID_API_KEY="YOUR_OWN_SENDGRID_KEY";
+exports.sendFromEmail="noreplay@yourdomain.com" // Verified email in Sendgrid
 
 //Orders are sent to --- CHANGE IT WITH YOUR OWN EMAIL
 exports.sendToEmail="contact@mobidonia.com" //YOU CAN USE SMOOCH.IO email here
 
 //Do you want BarCode Scanner to be shown
-exports.showBCScanner = true;
+exports.showBCScanner = false;
 
 //Used for the Firebase RunTime setup
 exports.config = null
 
-//Set this to true if you want to preview the demo apps
+//Set this to true if you want to make preview app
 exports.isPreview=false;
+
+//Set this to true if you want to preview the demo apps
+exports.isDemo=false;

@@ -199,7 +199,7 @@ class App extends Component {
                 <CardUI class="col-md-6"  name={this.state.using+"preview"} title={T.td("Preview")}  showAction={false}>
                     <br /><br />
                     <div className="iphone">
-                    	<img className="iphoneImg" src="iphone.png" alt="" />
+                    	<img className="iphoneImg" src="iphone.png" alt="" style={{'paddingLeft':'10%','width':'80%','height':'950px'}}/>
       					<span className="pushText">{this.state.title}  {Config.pushSettings.pushType=="firebase"?"":<br />} {this.state.value}</span>
                     </div>
                 </CardUI>

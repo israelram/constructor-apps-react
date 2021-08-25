@@ -23,7 +23,7 @@ const firestore=firebase.firestore();
 const settings={
   //
 }
-firestore.settings({timestampsInSnapshots:true});
+//firestore.settings({timestampsInSnapshots:true});
 //END FIX 
 
 

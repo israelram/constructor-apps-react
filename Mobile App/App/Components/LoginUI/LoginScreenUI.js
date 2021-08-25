@@ -141,7 +141,7 @@ class LoginScreen extends React.Component {
           {this.renderButtonOrLoading()}
 
         </ScrollView>  
-        <ConditionalDisplay condition={!this.props.isReqUserVarification}>
+        <ConditionalDisplay condition={!this.props.isReqUserVarification&&false}>
             <Tabbar
               animating={this.state.animating}
               isRoot={false}

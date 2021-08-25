@@ -33,8 +33,6 @@ export default class Navbar extends Component {
   
 
   render() {
-    const _this = this
-    var tintToUse=(css.dynamic.navBar.detailsTintColor&&this.props.detailsView?css.dynamic.navBar.detailsTintColor:css.dynamic.navBar.tintColor)
     return (
       <View style={{backgroundColor:"transparent"}}>
         <View style={{backgroundColor:"transparent"}}>
@@ -52,7 +50,7 @@ export default class Navbar extends Component {
                 <View style={{flexDirection:'row',justifyContent:'center'}}>
                   {this.props.options.map((item,index)=>{
                     var isSelected=item.id==this.state.selected;
-                    return (<SelectableButton key={item.id} {...this.props} onPressAction={this.showValue} isSelected={isSelected} title={item.title} idOfSelect={item.id} tintToUse={this.props.tintColor?this.props.tintColor:tintToUse} />)
+                    return (<SelectableButton key={item.id} {...this.props} onPressAction={this.showValue} isSelected={isSelected} title={item.title} idOfSelect={item.id} tintToUse={"black"} />)
                   })}
                 </View>
             </ScrollView>

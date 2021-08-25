@@ -1,10 +1,11 @@
 'use strict';
 
 import React, {Component} from "react";
-import {Text, View,ImageBackground} from "react-native";
+import { View,ImageBackground} from "react-native";
 import style from "./style";
 import css from '@styles/global'
 import { LinearGradient } from 'expo-linear-gradient'
+import {Text, Block} from 'galio-framework'
 
 //TODO make it with LinerGardian with the new expo
 
@@ -44,17 +45,22 @@ export default class Tiles extends Component {
       }
     }
     return (
-      <ImageBackground style={[styleOfGrid,{"overflow":"hidden",borderRadius:css.dynamic.general.rounded+""=="true"?10:0}]} source={{uri:this.props.image}}>
-      <LinearGradient
-          colors={[css.dynamic.rows.imageRowColor,css.dynamic.rows.imageRowColor]}
-          style={style.imageRowShadow}
-        >
-        <View style={style.imageRowTitleArea} >
-          <Text style={[css.static.defaultTitle,{textAlign: 'center',color:css.dynamic.category.textColor}]}>{this.props.title}</Text>
-          <Text style={[{marginLeft:10,marginRight:10,textAlign: 'center',color:css.dynamic.category.textColor,fontSize:16,opacity:0.8,fontWeight:"normal"}]}>{this.props.description}</Text>
-        </View>
-        </LinearGradient>
-      </ImageBackground>
+      <Block shadow shadowColor={"#000000"}>
+        <ImageBackground style={[styleOfGrid,{"overflow":"hidden",borderRadius:8}]} source={{uri:this.props.image}}>
+        <Block flex>
+          <LinearGradient
+              colors={["rgba(0,0,0,0.2)","rgba(0,0,0,0.2)"]}
+              style={style.imageRowShadow}
+            >
+            <View style={style.imageRowTitleArea} >
+              <Text h5 bold color={"white"}>{this.props.title}</Text>
+            </View>
+            </LinearGradient>
+        </Block>
+        
+        </ImageBackground>
+      </Block>
+      
     );
   }
 }

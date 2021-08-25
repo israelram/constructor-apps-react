@@ -7,6 +7,7 @@ import List from '@smartrow/List'
 import Notification from '@smartrow/NotificationsList'
 import OrderList from '@smartrow/OrderList'
 import Review from '@smartrow/Review';
+import Product from '@smartrow/Product';
 
 
 export default class SmartRow extends Component {
@@ -56,6 +57,7 @@ export default class SmartRow extends Component {
     var display=!this.state.isListing?this.state.display.categorySetup:this.state.display.listingSetup;
     //alert(JSON.stringify(display))
     display.grid_with_space=true;
+    
     if(styleOfDisplay=="grid1"){
       display.grid_rows=1;
       return (
@@ -68,6 +70,7 @@ export default class SmartRow extends Component {
       );
     }if(styleOfDisplay=="list"){
       return (
+        
         <List
           displayItems={this.state.display}
           subtitle={this.getExpectedValue("subtitle")}

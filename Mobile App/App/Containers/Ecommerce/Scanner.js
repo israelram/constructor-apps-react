@@ -11,6 +11,8 @@ import firebase from '@datapoint/Firebase'
 import { BarCodeScanner } from 'expo-barcode-scanner'
 import * as Permissions from 'expo-permissions'
 import Login from '@containers/Users/LoginScreen'
+import { Block } from "galio-framework";
+import Navbar from '@components/Navbar'
 
 export default class Scanner extends Component {
   constructor(props) {
@@ -64,8 +66,14 @@ export default class Scanner extends Component {
   render() {
     if(this.state.isLoggedIn)
     { return (
-      <View style={styles.container}>
-        {this.state.hasCameraPermission === null
+      <Block flex>
+        <Navbar 
+              back={false}
+              navigation={this.props.navigation} 
+              isRoot={false} 
+              title={this.props.data&&this.props.data.name?this.props.data.name:""}
+            />
+           {this.state.hasCameraPermission === null
           ? <Text>Requesting for camera permission</Text>
           : this.state.hasCameraPermission === false
               ? <Text style={{ color: '#fff' }}>
@@ -78,10 +86,12 @@ export default class Scanner extends Component {
                     width: Dimensions.get('window').width,
                   }}
                 />}
+       
 
         {this._maybeRenderUrl()}
         <StatusBar hidden />
-      </View>);
+        
+      </Block>);
     }else if(this.state.waitingForStatus){
       return(<View/>)
     }

@@ -2,6 +2,8 @@ import {AsyncStorage} from "react-native";
 import Config from '../../config'
 import firebase from '@datapoint/Firebase'
 import AppEventEmitter from "@functions/emitter"
+import moment from 'moment';
+var util = require('util')
 
 
 
@@ -20,25 +22,30 @@ import AppEventEmitter from "@functions/emitter"
 async function addFavoritesContent(object,property,callback){
    getFavoritesContent(property, async function(data,error){
      if(error==false){
-
-     
        var items=data;
        if(object instanceof Array){
           object.forEach(element => {
           items.push(element);
         });
        }else{
-        items.push(object);
+        items.push({
+          title:object.title?object.title:object.name,
+          description:object.description,
+          image:object.image,
+          price:object.price,
+          id:object.id,
+          stream:object.stream
+        });
        }
       
-
-       
+    
        try {
            await AsyncStorage.setItem('@MySuperStore:'+property, JSON.stringify(items),function(done){
             AppEventEmitter.emit('favorites.refresh');
             getFavoritesContent(property,callback);
           });
         } catch (error) {
+          alert("Error occured "+error.message)
           // Error saving data
         }
      }
@@ -170,6 +177,7 @@ exports.addCartContent=addCartContent;
 * @param {Function} callback
 */
 async function updateQty(id,qty,callback){
+  console.log("updateQty:"+id);
    getCartContent(async function(data,error){
      if(error==false){
        var cart=data;
@@ -432,8 +440,9 @@ async function saveOrderInFirebase(callback){
 
         var order={
           userID:userID,
-          time:firebase.firestore.FieldValue.serverTimestamp(),
+          time:moment().format('LLLL'),
           status:"Just created",
+          image:cart[0].image,
           delivery:{
             name:shipping.recipient_name,
             address:shipping.line1,
@@ -458,15 +467,23 @@ async function saveOrderInFirebase(callback){
           }
           total+=(curentCartItem.qty*curentCartItem.price);
 
-          for (var j = 0; j < curentCartItem.productOptions.length; j++) {
+          console.log(JSON.stringify(curentCartItem));
+          Object.keys(curentCartItem.productOptions||[]).map((optionName)=>{
+            var currentOption=curentCartItem.productOptions[optionName];
+            orderItem[currentOption.name]=curentCartItem[currentOption.id];
+          })
+          
+          /*for (var j = 0; j < curentCartItem.productOptions.length; j++) {
             var currentOption=curentCartItem.productOptions[j];
             orderItem[currentOption.name]=curentCartItem[currentOption.id];
-          }
+          }*/
 
           cartItems.push(orderItem);
         }
         order.order=cartItems;
         order.total=total;
+        order=JSON.parse(JSON.stringify(order));
+        console.log(JSON.stringify(order));
 
 
 
@@ -479,6 +496,7 @@ async function saveOrderInFirebase(callback){
         var pathFBConf = Config.config.orders_collection_data_point
 
         var path = pathFBConf != null?pathFBConf:defPath
+        console.log(path)
         
         db.collection(path).doc(new Date().getTime()+"").set(order)
         .then(function(docRef) {
@@ -541,7 +559,7 @@ function sengGridEmail(orderID,cart,shipping,subTotal,callback){
         }
       ],
       "from": {
-        "email": shipping.email
+        "email": Config.sendFromEmail
       },
       "content": [
         {

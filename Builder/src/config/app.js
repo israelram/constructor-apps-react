@@ -251,37 +251,10 @@ defaultExport.navigation=[
   },
   {
     "link": "fireadmin",
-    "path": "design",
+    "path": "design/general",
     "name": "Design",
     "icon":"color_lens",
-    "tableFields":["name","description"],
-    "subMenus":[
-      {
-        "link": "fireadmin",
-        "path": "design/general",
-        "name": "General",
-        "icon":"border_color",
-        "tableFields":["name","description"],
-      },{
-        "link": "fireadmin",
-        "path": "design/navBar",
-        "name": "Navigation bar",
-        "icon":"border_top",
-        "tableFields":["name","description"],
-      },{
-        "link": "fireadmin",
-        "path": "design/rows",
-        "name": "List design",
-        "icon":"short_text",
-        "tableFields":["name","description"],
-      },{
-        "link": "fireadmin",
-        "path": "design/sideMenu",
-        "name": "Side menu colors",
-        "icon":"format_color_fill",
-        "tableFields":["name","description"],
-      }
-    ]
+    "tableFields":["name","description"]
   },
   {
     "link": "firestoreadmin",
@@ -382,6 +355,7 @@ defaultExport.subDomainControlHolder="admins/";
 defaultExport.isAppCreator=true;
 defaultExport.appEditPath=undefined;
 defaultExport.isSaaS=false;
+defaultExport.isCloud=false;
 defaultExport.licenseCode=""; //Envato purchase code.
 defaultExport.saasAppsPath="/saasapps/"; //RAB as Saas On this path later we add user info
 defaultExport.notSaaSAppsPath="/myapps"; //When RAB not as saas
@@ -391,6 +365,36 @@ defaultExport.buildAccountUsername="mobidoniabuild";
 defaultExport.buildAccountPassword="AppBuild2";
 
 defaultExport.activeTranslation={"dynamic":{},"static":{}}
+
+//Set from environment
+if(process.env.REACT_APP_appName){
+  defaultExport.adminConfig.appName=process.env.REACT_APP_appName;
+}
+if(process.env.REACT_APP_adminEmail){
+  defaultExport.adminConfig.adminUsers=process.env.REACT_APP_adminEmail.split(",");
+}
+if(process.env.REACT_APP_purchaseCode){
+  defaultExport.licenseCode=process.env.REACT_APP_purchaseCode+"";
+}
+if(process.env.REACT_APP_isCloud){
+  defaultExport.isCloud=true;
+}
+if(process.env.REACT_APP_isSaaS){
+  defaultExport.isSaaS=true;
+  defaultExport.allowRegistration=true;
+  
+}
+if(process.env.REACT_APP_isDemo){
+  defaultExport.isDemo=true; 
+  defaultExport.adminConfig.allowRegistration=true;
+  defaultExport.isSaaS=true;
+  defaultExport.adminConfig.AllowGoogleAuth=false;
+}
+
+if(process.env.REACT_APP_disableRegistration){
+  defaultExport.adminConfig.allowRegistration=false;
+}
+
 
 
 export default defaultExport;

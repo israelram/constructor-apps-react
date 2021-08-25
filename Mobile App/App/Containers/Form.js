@@ -199,7 +199,7 @@ class Form extends Component {
         snapshot
             .docs
             .forEach(doc => {
-                var objToAdd=JSON.parse(doc._document.data.toString());
+                var objToAdd=doc.data();
                 //Add the id, on each object, easier for referencing
                 
                 objToAdd.id=doc.id;
@@ -462,7 +462,7 @@ class Form extends Component {
         snapshot
             .docs
             .forEach(doc => {
-                var objToAdd=JSON.parse(doc._document.data.toString());
+                var objToAdd=doc.data();
                 //Add the id, on each object, easier for referencing
                 objToAdd.id=doc.id;
                 photos.push(objToAdd);

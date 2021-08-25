@@ -12,6 +12,7 @@ import CartFunction from '@functions/cart'
 import ScrollableTabView, {DefaultTabBar,ScrollableTabBar } from 'react-native-scrollable-tab-view';
 import StepIndicator from '@components/StepIndicator';
 import Smartrow from '@smartrow'
+import Empty from '@components/Empty'
 
 import { Text,FormLabel, FormInput, Button } from 'react-native-elements'
 import Config from '../../../config'
@@ -19,6 +20,7 @@ import moment from 'moment';
 import Icon from 'react-native-vector-icons/Ionicons';
 import T from '@functions/translation'
 import * as Font from 'expo-font'
+import { Block } from "galio-framework";
 
 
 export default class Orders extends Component {
@@ -77,18 +79,17 @@ export default class Orders extends Component {
   */
   renderItem(data){
    
-    var item=data.item.order[0]
+    var item=data.item;//.order[0]
     
     var listingSetup={
       "fields": {
-  
-        "title": "name",
+        "title": "time",
         "image": "image",
-        "subtitle": "price",
-        "description": "quantity"
-
+        "subtitle": "total",
+        "subtitleFunctions": "roundOn,toCurrency~USD",
+        "description": "status",
       },
-      "listing_style": "orderList"
+      "listing_style": "list"
     };
 
     return (
@@ -107,7 +108,7 @@ export default class Orders extends Component {
   }
 
   openDetail(item){
-    this.props.navigation.navigate('OrderDetail',{data:item})
+     this.props.navigation.navigate('OrderDetail',{data:item})
    }
 
   /**
@@ -129,8 +130,31 @@ export default class Orders extends Component {
     var ref=db.collection(path);
     ref=ref.where('userID', '==', userID)
 
+    ref
+    .onSnapshot(function(snapshot) {
+      if(snapshot == null){
+        data = [];
+      }else{
+        data = [];
+        snapshot
+        .docs
+        .forEach(doc => {
+          var objToAdd=doc.data();
+          objToAdd.id=doc.id;
+          data.push(objToAdd);
+        });
+      }
 
-    ref.get()
+      
+      _this.setState({
+        items:data.reverse(),
+        animating:false
+      })
+    });
+
+
+
+   /* ref.get()
     .then(snapshot => {
       if(snapshot == null){
         data = [];
@@ -138,7 +162,7 @@ export default class Orders extends Component {
         snapshot
         .docs
         .forEach(doc => {
-          var objToAdd=JSON.parse(doc._document.data.toString());
+          var objToAdd=doc.data();
           objToAdd.id=doc.id;
           data.push(objToAdd);
         });
@@ -151,7 +175,7 @@ export default class Orders extends Component {
       })
      
 
-    });
+    });*/
   }
 
   /**
@@ -161,7 +185,7 @@ export default class Orders extends Component {
   renderIf(numItems){
     if(numItems == 0 && this.state.animating == false){
        return (
-          <Text style={css.layout.noItemsTextStyle}>{T.no_orders}</Text>
+           <Empty text={T.no_orders} />
         )
     }
   }
@@ -169,16 +193,19 @@ export default class Orders extends Component {
 
   render() {
     return (
-      <View style={[css.layout.containerBackground,{flex:1}]}>
+      <Block style={[css.layout.containerBackground,{flex:1}]}>
           
-          <Navbar navigation={this.props.navigation} isRoot={this.props.isRoot} showRightButton={false}  />
+          <Navbar navigation={this.props.navigation} isRoot={this.props.isRoot} showRightButton={false} title={this.props.data.name}  />
           {this.renderIf(this.state.items.length)}
-          <FlatList
-            data={this.state.items}
-            keyExtractor={this._keyExtractor}
-            renderItem={this.renderItem}
-          />
-      </View>
+          <Block style={{padding:16}}>
+            <FlatList
+              data={this.state.items}
+              keyExtractor={this._keyExtractor}
+              renderItem={this.renderItem}
+            />
+          </Block>
+          
+      </Block>
       )
     }
 }

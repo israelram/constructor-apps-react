@@ -1,123 +1,80 @@
 import React from 'react';
-import { Text, View, TouchableOpacity,ImageBackground, TextInput,ScrollView,ActivityIndicator,} from 'react-native';
-import * as firebase from 'firebase';
-import T from '@functions/translation';
-import css from '@styles/global';
-import ButtonUNI from '@uniappbuttons/AccentButton';
+import {TouchableWithoutFeedback, StyleSheet, Dimensions} from 'react-native';
+import { Block,Text, Input, theme, Button } from 'galio-framework';
+import Navbar from '@components/Navbar';
+import { LinearGradient } from 'expo-linear-gradient'
+
+const { width, height } = Dimensions.get("screen");
+import { materialTheme } from './../../../constants';
 
 class SignUpScreen extends React.Component {
-  static navigationOptions = {
-    
-      title: 'Sign Up',
-      header: null,
-    };
   
   constructor(props){
     super(props);
-    this.state = {
-      email: "",
-      password: '',
-      name:""
-    };
-  this.showActivityIndicator = this.showActivityIndicator.bind(this);
-}
-  
-/**
- * Show activity indicator
- * @param {Boolean} animating 
- */
-  showActivityIndicator(animating){
-    if(animating)
-    {
-        return(
-          <View style={css.layout.activityIndicatorView2}>  
-            <View style={css.layout.activitiIndicatorContainer2}>
-                <ActivityIndicator
-                      animating={animating}
-                      style={css.layout.activityIndicator}
-                      color='black'
-                      size="small"
-                      hidesWhenStopped={true}/>
-            </View>
-        </View>
-        )
-         
+        this.state = {
+          email: "",
+          password: '',
+          name:""
+        };
     }
-  }
-
-/**
- * Render SignUp button or show activity indicator
- */
-  renderButtonOrLoading()
-  {
-    return (
-    <View style={{marginTop: 20}}>
-    <ButtonUNI 
-        onPress={() => this.props.onSignUpPress(this.state.email, this.state.password,this.state.name)}
-        color1='rgb(233, 69, 120)'
-        color2='rgb(233, 69, 120)'
-        style={[css.layout.signUpButtonContainer,{marginTop:25}]}
-        title={T.register}
-        textStyle={[css.layout.signUpButtonText,{margin:20}]}
-        />
-        {this.showActivityIndicator(this.props.loading)}
-        <View style={css.layout.line}/>
-        <View style={{alignItems:'center'}}>
-          <TouchableOpacity
-              onPress={this.props.onLogInPress}>
-                <Text style={css.layout.alreadyHaveAccountTxt}>{T.alreadyHaveAccount}</Text>
-          </TouchableOpacity>
-          </View>
-    </View>
-    );
-  }
 
   render() {
-
     return (
-       
-      <ImageBackground
-        source={require('@images/login_bg.jpg')}
-        style={css.layout.imageBackground}
-      >
-       <ScrollView>  
-          <View style={[css.layout.signUpContainer,{marginTop:css.isIphoneX()?100:50, height:600}]}>
-          <Text style={css.layout.createAccountTxt}>{T.createAccount}</Text>
-          <Text style={css.layout.subSreateAccountTxt}>{T.becomeMember}</Text>
-          <Text style={css.layout.emailAndPasswordText}>{T.username.toUpperCase()}</Text>
-              <TextInput
-                  value = {this.state.name}
-                  onChangeText={name => this.setState({name})}
-                  placeholder = {T.enterUsername}
-                  autoCapitalize = 'none'
-                  style={css.layout.emailAndPasswordTextInput}
-              />
-              <Text style={css.layout.emailAndPasswordText}>{T.email.toUpperCase()}</Text>
-              <TextInput
-                  value = {this.state.email}
-                  onChangeText={email => this.setState({email})}
-                  placeholder = {T.enterMail}
-                  autoCapitalize = 'none'
-                  style={css.layout.emailAndPasswordTextInput}
-              />
-              <Text style={css.layout.emailAndPasswordText}>{T.password.toUpperCase()}</Text>
-              <TextInput
-                  value = {this.state.password}
-                  secureTextEntry
-                  onChangeText = {password => this.setState({password})}
-                  autoCapitalize = 'none'
-                  placeholder = {T.enterPass}
-                  spacing={40}
-                  style={css.layout.emailAndPasswordTextInput}
-              />
-              {this.renderButtonOrLoading()}
-          </View>
-           
-        </ScrollView> 
-      </ImageBackground>
-      
-    );
+      <Block flex>
+        
+          <Navbar
+            navigation={this.props.navigation}
+            title="Sign Up"
+            transparent
+            back />
+          <Block style={styles.loginbox}>
+            <Input  onChangeText={text=>{this.setState({name:text})}}  placeholderTextColor={materialTheme.COLORS.MUTED} placeholder="Name" style={styles.inputStyle} />
+            <Input  onChangeText={text=>{this.setState({email:text})}}  placeholderTextColor={materialTheme.COLORS.MUTED} placeholder="Email" style={styles.inputStyle} />
+            <Input  onChangeText={text=>{this.setState({password:text})}}  placeholderTextColor={materialTheme.COLORS.MUTED}  style={styles.inputStyle} password viewPass placeholder="Password"/>
+
+            <Block center style={styles.actions}>
+              <Button shadowless style={[styles.button, styles.shadow,{backgroundColor:materialTheme.COLORS.BUTTON_COLOR}]} onPress={() => this.props.onSignUpPress(this.state.email, this.state.password,this.state.name)}>
+                  SIGN UP
+              </Button>
+              <Block center>
+                <TouchableWithoutFeedback onPress={this.props.onLogInPress}>
+                  <Text style={styles.secondaryLinks}>Already have an account? Sign in</Text>
+                </TouchableWithoutFeedback>
+              </Block>
+            </Block>
+          </Block>
+      </Block>
+    )
   }
 }
 
 export default SignUpScreen;
+
+const styles = StyleSheet.create({
+  inputStyle:{
+    backgroundColor:null
+  },
+  loginbox:{
+    padding:16,
+    marginTop:30
+  },
+  button: {
+    marginBottom: theme.SIZES.BASE,
+    width: width - (theme.SIZES.BASE * 2),
+  },
+  gradient: {
+    zIndex: 1,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: height,
+    width: width
+  },
+  actions:{
+    marginTop:30
+  },
+  secondaryLinks:{
+    opacity:0.7
+  }
+});
+

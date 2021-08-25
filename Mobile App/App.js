@@ -8,7 +8,7 @@ console.disableYellowBox = true; //Set to false in development
 import React from 'react';
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Font from 'expo-font'
-import { Button, StyleSheet, TextInput, Text, View, Image, ScrollView,FlatList,TouchableOpacity,AsyncStorage,LayoutAnimation,Dimensions,NetInfo} from 'react-native';
+import { Button, StyleSheet, TextInput, View, Image, ScrollView,FlatList,TouchableOpacity,AsyncStorage,LayoutAnimation,Dimensions} from 'react-native';
 import { MaterialIcons, Ionicons,Feather } from '@expo/vector-icons';
 import firebase from '@datapoint/Firebase'
 import * as firebase2 from 'firebase';
@@ -23,7 +23,7 @@ import Gallery from '@containers/Gallery'
 import NotificationScreen from '@containers/Notifications'
 import Cart from '@ecommerce/Cart'
 import Orders from '@ecommerce/Orders'
-import OrderDetail from '@containers/OrderDetail'
+import OrderDetail from '@ecommerce/OrderDetail'
 import WebScreen from '@containers/WebScreen'
 import Home from '@containers/Home';
 import Review from '@containers/Review';
@@ -55,12 +55,23 @@ import OrderAction from '@ecommerce/OrderAction'
 import { ActionSheetProvider, connectActionSheet } from '@expo/react-native-action-sheet';
 import Chat from '@containers/Users/Chat'
 import AppIntroSlider from 'react-native-app-intro-slider';
-import { createDrawerNavigator,DrawerNavigator,DrawerItems,StackNavigator,TabNavigator,createAppContainer } from 'react-navigation';
+import {createAppContainer } from 'react-navigation';
 import LocationScreen from '@containers/LocationScreen';
-import {createStackNavigator} from 'react-navigation-stack';
+import { createStackNavigator } from 'react-navigation-stack';
 import { createBottomTabNavigator } from 'react-navigation-tabs';
+import { createDrawerNavigator,DrawerItems } from 'react-navigation-drawer';
 import { create } from 'apisauce'
+import { Block, GalioProvider, Text } from 'galio-framework';
+import Navbar from '@components/Navbar'
+import Menu from './navigation/Menu';
+import Drawer from './navigation/Drawer';
+import Checkout from '@ecommerce/Checkout'
 
+var defaultRoute=null;
+
+import { materialTheme } from './constants';
+
+const { width } = Dimensions.get('screen');
 
 const api = create({
   baseURL: 'https://install.reactappbuilder.com/appids/',
@@ -135,15 +146,6 @@ const MyScannerScreen = ({ navigation, data, design,isRoot,isReqUserVarification
   <Scanner data={data} navigation={navigation} isRoot={isRoot} isReqUserVarification={isReqUserVarification} config={config} />
 );
 
-const MyFormScreen = ({ navigation, data, design,isRoot,isReqUserVarification,config,formSetup, collectionName }) => (
-  <Form data={data} navigation={navigation} isRoot={isRoot} isReqUserVarification={isReqUserVarification} config={config} formSetup={formSetup} collectionName={collectionName} />
-);
-
-const MyGridScreen = ({ navigation, data, design,isRoot,isReqUserVarification,config }) => (
-    <Grid data={data} navigation={navigation} design={design} isRoot={isRoot} isReqUserVarification={isReqUserVarification} config={config} />
-  );
-
-  
 const MyDetailsFromScanner = ({ navigation, data, design,isRoot,config }) => (
   <OrderAction data={data} navigation={navigation} isRoot={isRoot} config={config} />
 );
@@ -188,6 +190,18 @@ const MyGallerySreen = ({ navigation, data, design,isRoot,subMenus, config }) =>
 */
 const MyCartSreen = ({ navigation, data, design,isRoot,subMenus,config }) => (
   <Cart data={data} navigation={navigation} design={design} config={config}  />
+);
+
+/**
+* MyCartSreen  - creates cart screen
+* @param {Object} navigation - the navigation data
+* @param {Object} data - informations about the current screen
+* @param {Object} design - design informations
+* @param {Boolean} isRoot - how we should display the navigation bar
+* @param {Object} [subMenus] - list of submenus to display
+*/
+const MyCheckoutScreen = ({ navigation, data, design,isRoot,subMenus,config }) => (
+  <Checkout data={data} navigation={navigation} design={design} config={config}  />
 );
 
 
@@ -253,6 +267,11 @@ const MyProfileSettingsSreen = ({ navigation, data, design,isRoot,subMenus,isReq
 const MyProfileSreen = ({ navigation, data, design,isRoot,subMenus,config }) => (
   <Profile data={data} navigation={navigation} design={design} config={config}  />
 );
+
+const MyChatSreen = ({ navigation, data, design,isRoot,subMenus,config }) => (
+  <Chat data={data} navigation={navigation} design={design}/>
+);
+
 /**
 * MyListOfUsersSreen - creates notifications screen
 * @param {Object} navigation - the navigation data
@@ -300,7 +319,7 @@ const MyAddContactSreen = ({ navigation, data, design,isRoot,subMenus,config }) 
   <AddContact data={data} navigation={navigation} design={design} config={config}  />
 );
 const MyLoginSreen = ({ isReqUserVarification, allowedUsers,config }) => (
-  <Login   isReqUserVarification={isReqUserVarification} allowedUsers={allowedUsers} config={config}/>
+  <Login  isReqUserVarification={isReqUserVarification} allowedUsers={allowedUsers} config={config}/>
 );
 
 const MyCommentsSreen = ({  navigation, data, design,isRoot,subMenus,config, id, path }) => (
@@ -415,11 +434,7 @@ componentDidMount(){
   this.setUpUserDataFromFB()
 
 
-  NetInfo.isConnected.addEventListener('connectionChange', this.handleConnectionChange);
-
-  NetInfo.isConnected.fetch().done(
-    (isConnected) => {this.setState({ status: isConnected }); }
-  );
+  
 
   if(Config.loginSetup.anonymousLogin){
     firebase.auth().signInAnonymously().catch(function(error) {
@@ -456,6 +471,8 @@ appScreensNavi(){
   this.setState({
     showAppScreens:true
   })
+  //this.navi.dispatch( NavigationActions.navigate({ routeName: defaultRoute }));
+
 }
 
 /**
@@ -505,7 +522,7 @@ async checkIfPushTokenExist(){
         }
       });
 
-      if(!Config.isPreview){
+      if(!Config.isPreview&&!Config.isDemo){
         
         //Load the data automatically, this is normal app and refister for Push notification
         this.registerForPushNotificationsAsync();
@@ -584,9 +601,9 @@ async checkIfPushTokenExist(){
       
       // Fix for latest version on Firestore
        
-      const firestore=firebase.firestore();
+      //const firestore=firebase.firestore();
       
-      firestore.settings({timestampsInSnapshots:true});
+      //firestore.settings({timestampsInSnapshots:true});
       //END FIX 
       
       _this.retreiveMeta()
@@ -828,13 +845,31 @@ async checkIfPushTokenExist(){
     var config = data.config
     //Routes structure
     var routes={};
-    var defaultRoute=data.navigation.menus[0].name;
+    defaultRoute=data.navigation.menus[0].name;
+    Config.defaultRoute=defaultRoute;
+   
     
    
     
     //Initialize the global design - user in other components on render
     var design=data.design;
     css.dynamic=data.design;
+
+    //materialTheme.COLORS.PRIMARY="red";
+    //materialTheme.COLORS.PRIMARY="red";
+    
+    materialTheme.COLORS.BUTTON_COLOR=design.general.buttonColor;
+    materialTheme.COLORS.PRIMARY=design.general.buttonColor;
+    materialTheme.COLORS.ACTIVE=design.general.buttonColor;
+    materialTheme.COLORS.SWITCH_ON=design.general.buttonColor;
+    materialTheme.COLORS.PRICE_COLOR=design.general.buttonColor;
+    materialTheme.COLORS={...materialTheme.COLORS, ...design.COLORS}
+
+    /*Object.keys(design.COLORS).map((key)=>{
+      materialTheme.COLORS[key]=design.COLORS[key];
+    })*/
+    
+    //alert(JSON.stringify(design.COLORS))
     AppEventEmitter.emit('colors.loaded');
     isReqUserVarification=data.config.userVarification
     allowedUsers=data.config.allowedUsers
@@ -846,13 +881,15 @@ async checkIfPushTokenExist(){
     //The master-detail type is the core one - contains Master, Categories , Master Sub and Details sceen
     //Other screens like cart and orders contains single windows
     data.navigation.menus.map((item,index)=>{
-      
+      var theScreen=null;
+      var addIt=true;
       
       //Each menu has stack nav with 3 routes, if type is master-detail or undefined
       if(item.type=="cart"||item.sectionType=="cart"){
         //Create the required screens in StackNavigator
         var theScreen = createStackNavigator({
           Cart: { screen: ({ navigation })=>(<MyCartSreen data={item} navigation={navigation} design={design} isRoot={true} config={config} />) },
+          Checkout: { screen: ({ navigation })=>(<MyCheckoutScreen data={item} navigation={navigation} design={design} isRoot={true} config={config} />) },
         },{
           initialRouteName:"Cart",
           headerMode:"none",
@@ -900,7 +937,7 @@ async checkIfPushTokenExist(){
         //Create the required screens in StackNavigator
         var theScreen = createStackNavigator({
           Notifications: { screen: ({ navigation })=>(<MyNotificationsSreen data={item} navigation={navigation} design={design} isRoot={true} config={config} />) },
-          Web: { screen:({ navigation })=>(<MyWebSreen data={item} navigation={navigation} design={design} fromNotification={true}/>) },
+          WebNotifications: { screen:({ navigation })=>(<MyWebSreen data={item} navigation={navigation} design={design} fromNotification={true}/>) },
         },{
           initialRouteName:"Notifications",
           headerMode:"none",
@@ -908,63 +945,17 @@ async checkIfPushTokenExist(){
             headerTintColor: 'blue',
           }
         });
-      }else if(item.type=="addNewItem"||item.sectionType=="addNewItem"){
-        //Create the required screens in StackNavigator
-       
-        var theScreen = createStackNavigator({
-          
-          Form: { screen: ({ navigation })=>(<MyFormScreen data={item} navigation={navigation} design={design} isRoot={true} formSetup={item.formSetup} collectionName={item.data_point}/>)},
-        },{
-          initialRouteName:"Form",
-          headerMode:"none",
-          navigationOptions: {
-            headerTintColor: 'blue',
-          }
-        });
-      }else if(item.type=="addContact"||item.sectionType=="addContact"){
-        //Create the required screens in StackNavigator
-        var theScreen = createStackNavigator({
-          AddContact: { screen: ({ navigation })=>(<MyAddContactSreen data={item} navigation={navigation} design={design} isRoot={true} config={config} />) },
-          CreateGroupChat: { screen: ({ navigation })=>(<MyCreateGroupChatSreen data={item} navigation={navigation} design={design} />)},
-          Chat: { screen: ({ navigation })=>(<MyChatSreen data={item} navigation={navigation} design={design} />)},
-          Profile: { screen: ({ navigation })=>(<MyProfileSreen data={item} navigation={navigation} design={design}  />)},
-          ProfileSettings: { screen:({ navigation })=>(<MyProfileSettingsSreen data={item} navigation={navigation} design={design} isReqUserVarification={isReqUserVarification} allowedUsers={allowedUsers}/>) },
-          ListOfUsers: { screen:({ navigation })=>(<MyListOfUsersSreen data={item} navigation={navigation} design={design} />) },
-          Chats: { screen:({ navigation })=>(<MyChatsSreen data={item} navigation={navigation} design={design}  />) },
-        },{
-          initialRouteName:"AddContact",
-          headerMode:"none",
-          navigationOptions: {
-            headerTintColor: 'blue',
-          }
-        });
-      }else if(item.type=="profile"||item.sectionType=="profile"){
-        //Create the required screens in StackNavigator
-        var theScreen = createStackNavigator({
-          Login: { screen: ({})=>(<MyLoginSreen  isReqUserVarification={isReqUserVarification} allowedUsers={allowedUsers} />),  navigationOptions: ({ navigation }) => ({ title: '',
-          header: null,
-        })
-      },
-          Chat: { screen: ({ navigation })=>(<MyChatSreen data={item} navigation={navigation} design={design} />)},
-          Profile: { screen: ({ navigation })=>(<MyProfileSreen data={item} navigation={navigation} design={design} isRoot={true} />)},
-          ProfileSettings: { screen:({ navigation })=>(<MyProfileSettingsSreen data={item} navigation={navigation} design={design} isReqUserVarification={isReqUserVarification} allowedUsers={allowedUsers}/>) },
-          ListOfUsers: { screen:({ navigation })=>(<MyListOfUsersSreen data={item} navigation={navigation} design={design} />) },
-          ForgetPassword: {screen: ForgetPassword},
-          SignUp: { screen: SignUp },
-          Login: { screen: ({})=>(<MyLoginSreen  isReqUserVarification={isReqUserVarification} allowedUsers={allowedUsers} />),  navigationOptions: ({ navigation }) => ({ title: '',
-        header: null,
-      })
-    },
-          
-         },{
-          initialRouteName:"Profile",
-          headerMode:"none",
-          navigationOptions: {
-            headerTintColor: 'blue',
-          }
-        });
+      }
+      else if(item.type=="addContact"||item.sectionType=="addContact"){
+        
+        addIt=false;
+      }
+      else if(item.type=="profile"||item.sectionType=="profile"){
+        addIt=false;
+        
       }
       else if(item.type=="scanner"||item.sectionType=="scanner"){
+        
         //Create the required screens in StackNavigator
         var theScreen = createStackNavigator({
           Scanner: { screen: ({ navigation })=>(<MyScannerScreen data={item} navigation={navigation} design={design} isRoot={true} />) },
@@ -981,6 +972,7 @@ async checkIfPushTokenExist(){
         var theScreen = createStackNavigator({
           Chats: { screen:({ navigation })=>(<MyChatsSreen data={item} navigation={navigation} design={design} isRoot={true} />) },
           Chat: { screen: ({ navigation })=>(<MyChatSreen data={item} navigation={navigation} design={design} />)},
+          ListOfUsers: { screen:({ navigation })=>(<MyListOfUsersSreen data={item} navigation={navigation} design={design} />) },
           Profile: { screen: ({ navigation })=>(<MyProfileSreen data={item} navigation={navigation} design={design} />)},
           Login: { screen: ({})=>(<MyLoginSreen  isReqUserVarification={isReqUserVarification} allowedUsers={allowedUsers} />),  navigationOptions: ({ navigation }) => ({ title: '',
         header: null,
@@ -1014,27 +1006,10 @@ async checkIfPushTokenExist(){
         });
       }else if(item.type=="listOfUsers"||item.sectionType=="listOfUsers"){
         //Create the required screens in StackNavigator
-        var theScreen = createStackNavigator({
-          
-          ListOfUsers: { screen:({ navigation })=>(<MyListOfUsersSreen data={item} navigation={navigation} design={design} isRoot={true} />) },
-         
-          Chat: { screen: ({ navigation })=>(<MyChatSreen data={item} navigation={navigation} design={design} />)},
-          Profile: { screen: ({ navigation })=>(<MyProfileSreen data={item} navigation={navigation} design={design} />)},
-          Login: { screen: ({})=>(<MyLoginSreen  isReqUserVarification={isReqUserVarification} allowedUsers={allowedUsers} />),  navigationOptions: ({ navigation }) => ({ title: '',
-        header: null,
-      })
-    },
-        },{
-          initialRouteName:'ListOfUsers',
-          headerMode:"none",
-          navigationOptions: {
-            headerTintColor: 'blue',
-          }
-        });
+        addIt=false;
       }else if(item.type==""||item.type==null||item.type=="master-detail"||item.sectionType=="master-detail"||item.type=="wish-list"||item.sectionType=="wish-list"){
         
         //Default
-       
          var initialRootName = item.initialRootName != null? item.initialRootName:"Master"
 
         //In case categories are the one that should be shown first
@@ -1058,10 +1033,8 @@ async checkIfPushTokenExist(){
           Categories: { screen: ({ navigation })=>(<MyCategoriesSreen data={item} navigation={navigation} design={design} isRoot={item.category_first} subMenus={[]} />) },
           Review: { screen: ({ navigation })=>(<MyReviewSreen data={item} navigation={navigation} design={design} isRoot={false} subMenus={[]} />) },
           MasterSUB: { screen: ({ navigation })=>(<MyCategoriesSreen data={{'categorySetup':item}} navigation={navigation} design={design} isRoot={true} subMenus={item.subMenus} />) },
-          Details: { screen:({ navigation })=>(<MyDetailsSreen data={item} navigation={navigation} design={design} isRoot={true} />) },
+          Details: {  screen:({ navigation })=>(<MyDetailsSreen data={item} navigation={navigation} design={design} isRoot={true} />) },
           Gallery: { screen:({ navigation })=>(<MyGallerySreen data={item} navigation={navigation} design={design} />) },
-          ForgetPassword: {screen: ForgetPassword},
-          SignUp: { screen: SignUp },
           WebSub: { screen: ({ navigation })=>(<MyWebSreen data={item} navigation={navigation} design={design} isRoot={true} fromNotification={true} />) },
           NotificationsSub: { screen: ({ navigation })=>(<MyNotificationsSreen data={item} navigation={navigation} design={design} isRoot={false} />) },
           OrdersSub: { screen: ({ navigation })=>(<MyOrdersSreen data={item} navigation={navigation} design={design} isRoot={false} />) },
@@ -1072,7 +1045,7 @@ async checkIfPushTokenExist(){
           ListOfUsersSub: { screen:({ navigation })=>(<MyListOfUsersSreen data={item} navigation={navigation} design={design} />) },
           Chats: { screen:({ navigation })=>(<MyChatsSreen data={item} navigation={navigation} design={design} />) },
           Chat: { screen: ({ navigation })=>(<MyChatSreen data={item} navigation={navigation} design={design} />)},
-          Form: { screen: ({ navigation })=>(<MyFormScreen data={item} navigation={navigation} design={design} />)},
+          WebNotificationsSub: { screen:({ navigation })=>(<MyWebSreen data={item} navigation={navigation} design={design} fromNotification={true}/>) },
           
         },{
           //initialRouteName:item.category_first?"Categories":(item.subMenus&&(item.subMenus.length>0?"MasterSUB":"Details")),
@@ -1086,117 +1059,120 @@ async checkIfPushTokenExist(){
 
       //Add navigation options to each StackNavigator
       //Create icon and name
-      theScreen.navigationOptions = {
-        drawerLabel: item.name,
-        tabBarLabel: css.dynamic.general.hideTabIconName?" ":item.name,
-        drawerIcon: ({ tintColor }) => (
-          <NavigationIcon icon={item.icon} size={24} tintColor={tintColor}/>
-        ),
-        tabBarIcon: ({ focused,tintColor }) => (
-          <NavigationIcon focused={focused} icon={item.icon} tintColor={tintColor} />
-        )
-      };
+      
 
-      //For each item, inside the routes, add the route with givven name
-      routes[item.name]={
-        path: '/'+item.name,
-        screen: theScreen,
-      }
+     
+        //For each item, inside the routes, add the route with givven name
+        if(addIt){
+
+          theScreen.navigationOptions = {
+            drawerLabel: ({focused}) => (
+              <Drawer focused={focused} screen={item.name} title={item.name} icon={item.icon} />
+            )
+          };
+
+          routes[item.name]={
+            path: '/'+item.name,
+            screen: theScreen,
+          }
+        }
+        
+      
+
+      
     });
     //END of the loop of menus
     //At this point we have all the routes created.
 
-    //=== LAYOUT CREATION =======
-    //Advance or simple coloring
-    var tintColor=design.general&&design.general.coloring&&design.general.coloring=="advanced"?design.sideMenu.activeTintColor:design.general.buttonColor;
-    
+   /**
+    * FIXED NAV 
+    */
+
+
+    //Login
     this.loginNavi=createAppContainer(createStackNavigator({
       ForgetPassword: {screen: ForgetPassword},
       SignUp: { screen: SignUp },
       Login: {screen: Login},
     },{
         initialRouteName:'Login',
-        headerMode:"none",
-        navigationOptions: {
-          headerTintColor: 'blue',
-        }   
-    }));
-   
-        
-        
-    if(design.general&&design.general.layout&&design.general.layout=="tabs"){
-
-      //TABS
-      this.navi = createAppContainer(createBottomTabNavigator(
-        routes,
-        {
-         
-          initialRouteName: defaultRoute,
-          tabBarPosition: 'bottom',
-          swipeEnabled: false,
-          lazyLoad: true,
-          animationEnabled: false,
-
-          tabBarOptions: {
-            showIcon: true,
-            showLabel: !design.general.hideTabIconName,
-            activeTintColor: tintColor,
-            inactiveTintColor:design.sideMenu.inactiveTintColor,
-            indicatorStyle: {
-            backgroundColor: tintColor
-           },
-
-          style: {
-            backgroundColor: design.general.backgroundColor,
-           
-          },
-          
-
-          },
-          contentOptions: {
-            activeTintColor: tintColor,
-            activeBackgroundColor: design.sideMenu.activeBackgroundColor,
-            inactiveTintColor:design.sideMenu.inactiveTintColor,
-            inactiveBackgroundColor:design.sideMenu.inactiveBackgroundColor
-          },
+        headerMode:"none", 
+        screenOptions:{
+          defaultRoute:defaultRoute
         }
-      ));
+    }));
 
-    }else if(design.general&&design.general.layout&&design.general.layout=="grid"){
-      console.log(JSON.stringify(routes))
-       //GRID Navigation
+    this.loginNavi.navigationOptions = {
+      drawerLabel: ({focused}) => (
+       <View></View>
+      )
+    };
 
-      //Options for nav
-      var navigationOptions = {
-          header: null,
-      };
+    routes["loginPATH"]={
+      path: 'loginPATH',
+      screen: this.loginNavi,
+    }
 
-       
-       theGridScreen=createStackNavigator({
-            GridView: { screen: ({ navigation })=>(<MyGridScreen data={data} navigation={navigation} design={design} isRoot={true} />) },
-        },{
-            initialRouteName:"GridView",
-            headerMode:"none",
-            navigationOptions: navigationOptions
-        });
+    //Profile
+    var profileNavi=createAppContainer(createStackNavigator({
+      TheProfileSettings: { screen:({ navigation })=>(<MyProfileSettingsSreen  navigation={navigation} design={design} isReqUserVarification={isReqUserVarification} allowedUsers={allowedUsers}/>) },
+    },{
+        initialRouteName:'TheProfileSettings',
+        headerMode:"none", 
+    }));
 
-       routes['ourGridInitalView']={
-        path: '/ourGridInitalView',
-        screen: theGridScreen,
-      }
+    profileNavi.navigationOptions = {
+      drawerLabel: ({focused}) => (
+       <View></View>
+      )
+    };
 
-       this.navi = createStackNavigator(
-           routes,
-           {
-            initialRouteName: "ourGridInitalView",
-            navigationOptions: navigationOptions
-           }
-       )       
-    }else{
+    routes["profilePATH"]={
+      path: 'profilePATH',
+      screen: profileNavi,
+    }
+
+
+
+    /**
+     * THE LOGIN ROUTE
+     */
+    
+    
+
+
+   
       //SIDE Navigation
       this.navi = createAppContainer(createDrawerNavigator(
         routes,
         {
+          contentComponent: props => <Menu {...props} hideLogin={data&&data.settings&&data.settings.login?data.settings.login.hideLogin:false} />,
+          drawerBackgroundColor: 'white',
+          drawerWidth: width * 0.8,
+          contentOptions: {
+            activeTintColor: 'red',
+            inactiveTintColor: '#000',
+            activeBackgroundColor: 'transparent',
+            itemStyle: {
+              width: width * 0.75,
+              backgroundColor: 'transparent',
+            },
+            labelStyle: {
+              fontSize: 18,
+              marginLeft: 12,
+              fontWeight: 'normal',
+            },
+            itemsContainerStyle: {
+              paddingVertical: 16,
+              paddingHorizonal: 12,
+              justifyContent: 'center',
+              alignContent: 'center',
+              alignItems: 'center',
+              overflow: 'hidden',
+            },
+          },
+        }
+        /*{
           initialRouteName: defaultRoute,
           contentComponent: props =>
             <ScrollView style={{backgroundColor:design.sideMenu.sideNavBgColor}}>
@@ -1216,9 +1192,9 @@ async checkIfPushTokenExist(){
             inactiveTintColor:design.sideMenu.inactiveTintColor,
             inactiveBackgroundColor:design.sideMenu.inactiveBackgroundColor
           },
-        }
+        }*/
         ));
-    }
+    
 
     //=== END LAYOUT ============
 
@@ -1295,27 +1271,21 @@ async checkIfPushTokenExist(){
   
   //STEP 3 - render
   render() {
+
+
     
     if(this.state.metaLoaded&&this.state.isReady){
-      //Data is loaded , do we need a login
-      if(this.state.meta.config.loginRequired&&!this.state.showAppScreens){
-        
-        return (
-          <ActionSheetProvider>
-            <this.loginNavi isLoggedIn={this.state.showAppScreens} />
-          </ActionSheetProvider>);
-      }else{
-        //Normaly, go inside the app
-       
-          return (
-            <ActionSheetProvider>
-              <this.navi isLoggedIn={this.state.showAppScreens} isReqUserVarification={this.state.meta.config.userVarification}  />
-            </ActionSheetProvider>
+      //Data IS Loaded
+      return (
+            <GalioProvider>
+              <ActionSheetProvider>
+                <this.navi defaultRoute={defaultRoute} isLoggedIn={this.state.showAppScreens} isReqUserVarification={this.state.meta.config.userVarification}  />
+              </ActionSheetProvider>
+            </GalioProvider>
+            
             );
-      }
-      
     }else{
-      if(!Config.isPreview){
+      if(!Config.isPreview&&!Config.isDemo){
         //Normal App, Data is not yet loaded, show the loading screen
         return (
           <View style={css.static.container}>
@@ -1328,105 +1298,59 @@ async checkIfPushTokenExist(){
           </View>
         )
       }else{
-        //This is a preview app, show the list of Apps
-        if(this.state.openBCScanner){
-          const { hasCameraPermission } = this.state;
-
-          if(hasCameraPermission === null) {
-            return <Text>Requesting for camera permission</Text>;
-          } else if (hasCameraPermission === false) {
-            return <Text>No access to camera</Text>;
-          } else {
-            return (
-              <View style={{ flex: 1 }}>
-                  
-                <BarCodeScanner
-                  onBarCodeScanned={this._handleBarCodeRead}
-                  style={StyleSheet.absoluteFill}
-                >
-                <TouchableOpacity
-                  onPress={this.back}>
-              
-                  <View style={{marginTop:40,marginLeft:10}}>
-                    <SmartIcon defaultIcons={"MaterialIcons"} name={"FeArrowLeft"}  size={25} color='white'/>
-                  </View>
-              </TouchableOpacity>
-              </BarCodeScanner>
-             </View>
-            );
-          }
-
-        }else{
-          if(this.state.showSliders){
-            if (!this.state.showRealApp) {
-              
-
-                return <AppIntroSlider slides={this.state.slides} onDone={this._onDone} renderDoneButton={this._renderDoneButton}
-                renderNextButton={this._renderNextButton}/>;
-              
-          
-            }
-            
-          }else{
+          //Preview app
             if(this.state.fontLoaded){
-              return (
-                <View style={{padding:10,paddingTop:60,backgroundColor:"#f7f7f7",flex:1}}>
-                    <View style={{flexDirection: 'row',justifyContent: 'flex-end'}}>
-                       <ConditionalDisplay condition={Config.showBCScanner}>
-                            <TouchableOpacity 
-                                onPress={this.openScanner}>
-                                <SmartIcon defaultIcons={"MaterialIcons"} name={"MdCropFree"}  size={25} color="#434F64"/>
-                            </TouchableOpacity>
-                       </ConditionalDisplay>
-                    </View>
-                    <Text style={[css.static.defaultTitle,{paddingLeft:4,marginBottom:20}]}>Unique App id</Text>
-                    {/** START */}
-                    <View style={{flexDirection:"row"}}>
-                    <TouchableOpacity >
-                        <View style={[{backgroundColor:"#ffffff",borderRadius:10,margin:4,marginBottom:15,padding:10,
-                          shadowColor: "#000",
-                          shadowOpacity: 0.1,
-                          shadowRadius: 4,
-                          shadowOffset: { width: 0, height: 4 },
-                          elevation: 5,
-                          height:70
-                          }]}>
-                            
-                          <View>
-                          <TextInput maxLength = {4} selectionColor={"gray"} keyboardType={"number-pad"} placeholder={"ID"} style={{fontSize:50}} onChangeText={(text)=>{
-                            console.log(text);
-                            if(text.length==4){
-                              this.fetchTheCodeForApp(text);
-                            }
-                          }} />
-                           
+              if(Config.isPreview){
+                //UNQUE ID
+                return (
+                  <View style={{padding:10,paddingTop:60,backgroundColor:"#f7f7f7",flex:1}}>
+                      <Text h4 bold muted style={[{marginTop:20}]}>Unique App id</Text>
+                      {/** START */}
+                      <View style={{flexDirection:"row"}}>
+                      <TouchableOpacity >
+                          <View style={[{backgroundColor:"#ffffff",borderRadius:10,margin:4,marginBottom:15,padding:10,
+                            shadowColor: "#000",
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                            shadowOffset: { width: 0, height: 4 },
+                            elevation: 5,
+                            height:70
+                            }]}>
+                              
+                            <View>
+                            <TextInput maxLength = {4} selectionColor={"gray"} keyboardType={"number-pad"} placeholder={"ID"} style={{fontSize:50}} onChangeText={(text)=>{
+                              console.log(text);
+                              if(text.length==4){
+                                this.fetchTheCodeForApp(text);
+                              }
+                            }} />
+                             
+                            </View>
                           </View>
+                        </TouchableOpacity>
                         </View>
-                      </TouchableOpacity>
-                      </View>
-
-                    {/** END */}
-
-
-
-
-                    
-                    
-                    <Text style={[css.static.defaultTitle,{paddingLeft:4,marginTop:20}]}>Preview a DEMO app</Text>
-                    
-                    <FlatList
-                      style={{marginTop:20,backgroundColor:"#f7f7f7"}}
-                      data={this.state.allAppsData}
-                      renderItem={this.renderAppRow}
-                    />
-                </View>
-              )
+  
+                      {/** END */}
+                  </View>
+                )
+              }else if(Config.isDemo){
+                //LIST OF APPS
+                return (
+                  <View style={{padding:10,paddingTop:60,backgroundColor:"#f7f7f7",flex:1}}>
+                      <Text h4 bold muted style={[{marginTop:20}]}>Preview a demo app</Text>
+                      
+                      <FlatList
+                        style={{marginTop:20,backgroundColor:"#f7f7f7"}}
+                        data={this.state.allAppsData}
+                        renderItem={this.renderAppRow}
+                      />
+                  </View>
+                )
+              }
+              
             }else{
               return <View></View>
             }
-            
-        }
-      }
       }
 
     }

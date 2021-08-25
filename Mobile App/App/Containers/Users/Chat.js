@@ -5,15 +5,13 @@
 */
 import React, { Component, PropTypes } from "react";
 import * as firebase from 'firebase';
-import { View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Permissions from 'expo-permissions'
 import ChatUI from '@components/LoginUI/ChatUI';
-import Login from '@containers/Users/LoginScreen'
 import { create } from 'apisauce'
-import appConfig from '../../../app.json';
 import AppEventEmitter from "@functions/emitter"
-import { ActionSheetProvider, connectActionSheet } from '@expo/react-native-action-sheet';
+import appConfig from '../../../app.json';
+import fun from '@functions/common';
 
 const api = create({
   baseURL: 'https://exp.host/--/api/v2/push/send',
@@ -38,100 +36,62 @@ export default class Chat extends Component {
 
     super(props);
     this.state = {
-      avatar: "",
-      selectedUserAvatar: "",
-      selectedUserFullname: "",
-      selectedUserToken: "",
-      name: "",
-      userID: "",
+      chatName:this.props.navigation.state.params.title, //The title that appears on top
+      selectedUser: isDataInProps == true ? null : this.props.navigation.state.params.selectedUser, //The user id we are chatting with  - can be null
+      chatID: this.props.navigation.state.params.chatID, //The chat id - combination of current user id and selected user id
       messages: [],
-      imageUrl: "",
       animating: false,
       currentMessage: [],
       currentMessageText: [],
-      selectedUser: isDataInProps == true ? null : this.props.navigation.state.params.selectedUser,
-      chatID: "",
-      documentID: this.props.data.objectIdToShow == null ? this.props.navigation.state.params.id : this.props.data.objectIdToShow,
       path: this.props.data.path == null ? this.props.navigation.state.params.path : this.props.data.path,
-      image: isDataInProps == true ? null : this.props.navigation.state.params.image,
-      title: isDataInProps == true ? null : this.props.navigation.state.params.title,
-      waitingForStatus: true,
-      isLoggedIn: false,
-      groupChatIds: [],
-      groupChatName: []
+      userID: firebase.auth().currentUser.uid,
+      avatar: "",
+      name: "",
+      selectedUserAvatar: "",
+      selectedUserFullname: "",
+      selectedUserToken: "",
+      //userID: "",
+      //imageUrl: "",
+      //documentID: this.props.data.objectIdToShow == null ? this.props.navigation.state.params.id : this.props.data.objectIdToShow,
+      //image: isDataInProps == true ? null : this.props.navigation.state.params.image,
+      //title: isDataInProps == true ? null : this.props.navigation.state.params.title,
+      //waitingForStatus: true,
+      //isLoggedIn: false,
+      //groupChatIds: [],
+      //groupChatName: []
 
     }
-    this.setUpCurrentUser = this.setUpCurrentUser.bind(this);
-    this.getDataForSelectedUser = this.getDataForSelectedUser.bind(this);
-    this.addToChatsInDataBase = this.addToChatsInDataBase.bind(this);
+
     this.writeChatsInDB = this.writeChatsInDB.bind(this);
     this.pushTheMessageTo = this.pushTheMessageTo.bind(this);
+    this.addToChatsInDataBase = this.addToChatsInDataBase.bind(this);
+    this.getDataForSelectedUser = this.getDataForSelectedUser.bind(this);
+    
+    /*this.setUpCurrentUser = this.setUpCurrentUser.bind(this);
+    
+    
+    
+    
     this.back = this.back.bind(this);
     this.sendPushNotification = this.sendPushNotification.bind(this);
     this._openCamera = this._openCamera.bind(this);
     this.writeTheGroupChatInDB = this.writeTheGroupChatInDB.bind(this);
-    this.changeTheName = this.changeTheName.bind(this);
+    this.changeTheName = this.changeTheName.bind(this);*/
   }
-
-
 
   componentDidMount() {
-    firebase.auth().onAuthStateChanged(this.setUpCurrentUser);
-    if(this.props.data&&this.props.data.isPublic){
-      firebase.auth().signInAnonymously().catch(function(error) {
-        // Handle Errors here.
-        var errorCode = error.code;
-        var errorMessage = error.message;
-        // ...
-      });
-    }
-    
+    this.getMessages();
+    this.getDataForSelectedUser();
   }
 
-
-  /**
-   * SET THE USER
-   * @param object user 
-   */
-  setUpCurrentUser(user) {
-    var _this = this
-
-    if (user != null) {
-
-      // User is signed in.
-      _this.setState({
-        avatar: this.props.navigation&&this.props.navigation.state&&this.props.navigation.state.params&&this.props.navigation.state.params.groupAvatar != null ? this.props.navigation.state.params.groupAvatar : "",
-        name: user.displayName,
-        userID: firebase.auth().currentUser.uid,
-        groupChatIds:  this.props.navigation&&this.props.navigation.state&&this.props.navigation.state.params?this.props.navigation.state.params.groupChatIds:null,
-        groupChatName: this.props.navigation&&this.props.navigation.state&&this.props.navigation.state.params?this.props.navigation.state.params.groupChatName.toString():"",
-        chatID: this.props.navigation&&this.props.navigation.state&&this.props.navigation.state.params?this.props.navigation.state.params.chatID:"",
-        isLoggedIn: true,
-        waitingForStatus: false,
-      })
-
-      this.getMessages();
-      if (this.state.selectedUser) {
-        this.getDataForSelectedUser();
-      }
-
-    } else {
-
-      // User is not signed in  
-      this.setState({
-        waitingForStatus: false,
-        isLoggedIn: false,
-      })
-    }
-  }
 
   /**
    * Get the message from database
    */
   getMessages() {
-
     var _this = this;
-    var id = this.state.path == "comments/" ? this.state.documentID : this.state.chatID
+    var id = this.state.path == "comments/" ? this.state.documentID : this.state.chatID;
+   //alert(id)
     firebase.database().ref(this.state.path + id).on('value', function (snapshot) {
       var theMessages = []
       snapshot.forEach(function (childSnapshot) {
@@ -152,65 +112,63 @@ export default class Chat extends Component {
    */
   getDataForSelectedUser() {
     var _this = this;
-    firebase.database().ref('/users/' + this.state.selectedUser).once('value').then(function (snapshot) {
+    firebase.database().ref(appConfig.expo.extra.firebaseMetaPath+'/users/' + this.state.selectedUser).once('value').then(function (snapshot) {
       _this.setState({
-        selectedUserAvatar: snapshot.val().avatar,
-        selectedUserFullname: snapshot.val().fullName,
+        selectedUserAvatar: fun.FunctionDirectory.gravatar(snapshot.val().email),
+        selectedUserFullname: snapshot.val().username,
         selectedUserToken: snapshot.val().token == null ? "" : snapshot.val().token
       })
     })
+
+
+    firebase.database().ref(appConfig.expo.extra.firebaseMetaPath+'/users/' +firebase.auth().currentUser.uid).once('value').then(function (snapshot) {
+      _this.setState({
+        avatar: fun.FunctionDirectory.gravatar(snapshot.val().email),
+        name: snapshot.val().username
+      })
+    })
+
 
   }
 
   /**
    * Write in CHATS
-   * @param {string} user1 
-   * @param {string} user2 
+   * @param {string} message
    */
-  writeChatsInDB(user1, user2, message) {
+  writeChatsInDB(message) {
 
-    firebase.database().ref('chats/' + user1 + "/" + user2).update({
-      avatar: user1 == firebase.auth().currentUser.uid ? this.state.selectedUserAvatar : this.state.avatar,
-      name: user1 == firebase.auth().currentUser.uid ? this.state.selectedUserFullname : this.state.name,
+    var currentID=firebase.auth().currentUser.uid;
+    var selectedUser=this.state.selectedUser;
+    
+    //For owner
+    firebase.database().ref('chats/' + currentID + "/" + selectedUser).update({
+      avatar: this.state.selectedUserAvatar,
+      name: this.state.selectedUserFullname,
       lastChat: Date.now(),
-      id: user1 == firebase.auth().currentUser.uid ? user2 : firebase.auth().currentUser.uid,
+      id: selectedUser,
+      lastMessage: message
+    });
+
+
+    //For Selected user
+    firebase.database().ref('chats/' + selectedUser  + "/" +currentID ).update({
+      avatar: firebase.auth().currentUser.displayPhoto|"",
+      name: firebase.auth().currentUser.displayName|"",
+      lastChat: Date.now(),
+      id: currentID,
       lastMessage: message
     });
 
   }
 
-  writeTheGroupChatInDB(message) {
-    // 1. add current user in the groupChatIds
-    //this.state.groupChatIds.push(firebase.auth().currentUser.uid)
-    var _this = this
-
-    this.state.groupChatIds.forEach(function (element) {
-      firebase.database().ref('chats/' + element + "/" + _this.state.chatID + "/").update({
-        avatar: _this.state.avatar,
-        name: _this.state.groupChatName,
-        lastChat: Date.now(),
-        id: element,
-        lastMessage: message,
-        usersInTheChat: _this.state.groupChatIds
-
-      });
-    });
-  }
+ 
+  
   /**
    * Add in the list of chats as last message to both users
    * @param {Object} message 
    */
   addToChatsInDataBase(message) {
-    //One to one chat
-    if (this.state.groupChatIds == null) {
-      this.writeChatsInDB(firebase.auth().currentUser.uid, this.state.selectedUser, message)
-      this.writeChatsInDB(this.state.selectedUser, firebase.auth().currentUser.uid, message)
-    }
-    // Group chat
-    else {
-      this.writeTheGroupChatInDB(message)
-    }
-
+    this.writeChatsInDB(message);
   }
 
   /**
@@ -218,9 +176,9 @@ export default class Chat extends Component {
    * @param {Object} message 
    */
   pushTheMessageTo(message) {
-    //alert(this.state.path)
-    var id = this.state.path == "comments/" ? this.state.documentID : this.state.chatID
-    firebase.database().ref(this.state.path + id).push().set(message);
+    //alert(this.state.path + this.state.chatID);
+    //alert(JSON.stringify(message))
+    firebase.database().ref(this.state.path + this.state.chatID).push().set(message);
   }
 
   /**
@@ -366,15 +324,6 @@ export default class Chat extends Component {
     });
   }
 
-  changeTheName(name) {
-    var _this = this
-    _this.state.groupChatIds.forEach(function (element) {
-      firebase.database().ref('chats/' + element + "/" + _this.state.chatID + "/").update({
-        name: name,
-      });
-      //AppEventEmitter.emit('ChangeGroupName');
-    })
-  }
 
   back() {
     this.props.navigation.pop();
@@ -384,7 +333,6 @@ export default class Chat extends Component {
 
 
   render() {
-    if (this.state.isLoggedIn||(this.props.data&&this.props.data.isPublic)) {
       return (
         <ChatUI
           isPublic={this.props.data&&this.props.data.isPublic}
@@ -393,6 +341,7 @@ export default class Chat extends Component {
           selectedUserAvatar={this.state.selectedUserAvatar}
           selectedUserToken={this.state.selectedUserToken}
           userID={this.state.userID}
+          chatName={this.state.chatName}
           name={this.state.name}
           avatar={this.state.avatar}
           messages={this.state.messages}
@@ -400,24 +349,15 @@ export default class Chat extends Component {
           documentID={this.state.documentID}
           chatID={this.state.chatID}
           imageUrl={this.state.imageUrl}
-          groupChatIds={this.state.groupChatIds}
-          groupChatName={this.state.groupChatName}
           addToChatsInDataBase={this.addToChatsInDataBase}
           pushTheMessageTo={this.pushTheMessageTo}
           callBackPickImage={this._pickImage}
           sendPushNotification={this.sendPushNotification}
           animating={this.state.animating}
-          back={this.back}
-          changeTheName={this.changeTheName}
           callBackOpenCamera={this._openCamera}
         >
         </ChatUI>
       )
-    } else if (this.state.waitingForStatus) {
-      return (<View />)
-    }
-    else if (!this.state.isLoggedIn) {
-      return (<Login navigation={this.props.navigation} />)
-    }
+    
   }
 }

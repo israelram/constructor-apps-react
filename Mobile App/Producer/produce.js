@@ -5,7 +5,6 @@
   Makes expo app
 */
 var firebaseConfig = require('./../firebase_config');
-var program = require('commander');
 var chalk = require('chalk');
 var inquirer = require('inquirer');
 var appJSONTemplate = require('./../app.json');
@@ -14,75 +13,71 @@ const https = require('https');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
 
+//Is Server - when you have the script on server
+var isServer=process.argv.includes('--server');
+console.log(isServer?"It is server":"Normal");
+
+try {
+    // a path we KNOW is totally bogus and not a module
+    var serviceJSON = require('./service-account-file.json');
+   }
+   catch (e) {
+    console.log(chalk.red('We can\'t find the file service-account-file.json in Mobile App/Producer/ folder. Pls refeer to docs'));
+    process.exit(0);
+   }
+
+var admin = require('firebase-admin');
+
 var exec = require('./lib/exec');
-const CryptoJS = require("crypto-js");
 var Config = require('./config.js');
 const isTesting=Config.isTesting;
 
 const pathToPointers="/rab_pointers/";
 var IS_CYCLE=false;
-var appsInQueue=0;
 var userEmail="";
 var userDisplayName="";
 var appName="";
 
-//EXPRESS
-const express = require('express')
-const app = express()
-const port = 8989;
 
-
-
-
-// define the REsT api to firebase Database
-const firebaseAPI = require('apisauce').create({
-  baseURL: firebaseConfig.config.databaseURL,
-})
-
-// define the REsT api to firebase Database
-const cloudFunctionsAPI = require('apisauce').create({
-    baseURL:  "https://"+Config.cloudFunctionsArea+"-"+firebaseConfig.config.projectId+".cloudfunctions.net/",
-  })
-
-//START EXPRESS and Start the App builder
-app.get('/', (req, res) => res.send('IN BUILD CYCLE: '+(IS_CYCLE?"YES":"NO")+"<br />APPS IN QUEUE: "+appsInQueue))
-app.listen(port, () => {
-
-    console.log(chalk.green('Build system info avilable on localhost:'+port));
-    console.log("");
-
-    program
-        .parse(process.argv);
-            if (program.args.length === 0 || typeof program.args[program.args.length - 1] === 'string') {
-                if(Config.isServer){
-                    IS_CYCLE=true;
-                    startBuildCycle();
-                }else{
-                    start();
-                }
-            }
-
-    
-
-});
-
-
+function debugIt(message){
+    console.log("\n"+message);
+}
 
 /**
- * STEP 1. Main start function, displays the initial menu
+ * START - THE MAIN ENTRY POINT OF THE PRODUCER IF REGULAR
  */
 function start(){
 
-    //SaaS or Regular functions
-    var choices=Config.isSaaS?[
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceJSON),
+        databaseURL: "https://"+serviceJSON.project_id+".firebaseio.com"
+      });
+
+    var opsys = process.platform;
+
+    //Default
+    var choices=[
         "Make Android app",
-        "Make iPhone app",
-        "Start build cycle",
         "Exit"
-    ]:[
-        "Make Android app",
-        "Make iPhone app",
-        "Exit"];
+    ];
+
+    //On MAC you can make iPhone apps
+    if (opsys == "darwin") {
+        choices=[
+            "Make Android app",
+            "Make iPhone app",
+            "Exit"
+        ];
+    }
+
+    //On Cloud, we can make build 
+    if(process.env.REACT_APP_isCloudAppBuilder){
+        choices=[
+            "Make Android app",
+            "Start build cycle",
+            "Exit"
+        ];
+    }
 
 
     //Main List, ask user what to do
@@ -125,9 +120,27 @@ function start(){
     );
 }
 
+
+//GO WITH SERVER OR LOCAL PRODUCER
+if(isServer){
+    //It is server
+    IS_CYCLE=true;
+
+    admin.initializeApp({
+        credential: admin.credential.cert(serviceJSON),
+        databaseURL: "https://"+serviceJSON.project_id+".firebaseio.com"
+      });
+
+    startBuildCycle();
+}else{
+    //Regular, ask questions
+    start();
+}
+
+
 /**
  *
- * Step 2. Start making app, ask for the number
+ * Start making app, ask for the number
  *
  * @param {String} whatKindOfApp makeiphoneapp or makeandroidapp
  */
@@ -157,7 +170,6 @@ function makeAnApp(whatKindOfApp){
 }
 
 /**
- *  STEP 2.B
  *  Start the get process for the app data
  *
  * @param {Number} app_id
@@ -166,28 +178,49 @@ function makeAnApp(whatKindOfApp){
 function startFetchingAppData(app_id,whatKindOfApp){
     var spinner = new Spinner('%s Fetching App Data..');
         spinner.setSpinnerString('|/-\\');
-        spinner.start();
+        
 
     //Now connect to firebase to get the data
-    var path=pathToPointers+"data/"+app_id+".json"
-    firebaseAPI.get(path).then(rab_pointers=>{
-        if(rab_pointers.data!=null){
+    var path=pathToPointers+"data/"+app_id
+    debugIt(path);
+    
+    var db = admin.database();
+    var ref = db.ref(path);
+    ref.on("value", function(snapshot) {
+        var rab_pointers=snapshot.val();
+        debugIt(rab_pointers);
+        if(rab_pointers!=null){
             //Pointer exists
-            firebaseAPI.get(rab_pointers.data+".json").then(response=>{
+            db.ref(rab_pointers).on("value",function(snapPointer){
                 spinner.stop(true);
-                makeAppJSON(response.data,whatKindOfApp,rab_pointers.data,app_id);
-            })
+                response=snapPointer.val();
+                if(response!=null){
+                    //debugIt(JSON.stringify(response));
+                    makeAppJSON(response,whatKindOfApp,rab_pointers,app_id);
+                }else{
+                    spinner.stop(true);
+                    var errora="\nError 3a: The pointer of app with ID: "+app_id+" doesn't exists in your database";
+                    console.log(chalk.red(errora));
+                }
+            });
+           
         }else{
-            spinner.stop();
+            spinner.stop(true);
             //Pointer doesn't existin, notify user
-            var error="Error 3: The app with ID: "+app_id+" doesn't exists in your database";
+            var error="\nError 3: The app with ID: "+app_id+" doesn't exists in your database";
             console.log(chalk.red(error));
 
             //Dead end, notify admin and stop
             notifyAdminAndStop(error);
 
         }
-    })
+      }, function (errorObject) {
+        console.log(chalk.red("\nThe read failed: " + errorObject.code));
+        spinner.stop();
+        process.exit(0);
+      });
+      spinner.start();
+
 }
 
 /**
@@ -211,7 +244,7 @@ function getVersionCode(){
 }
 
 /**
- * STEP 3 Make the app.json
+ * Make the app.json
  *
  * @param {Object} response
  * @param {String} whatKindOfApp makeiphoneapp or makeandroidapp
@@ -223,26 +256,57 @@ function makeAppJSON(response,whatKindOfApp,firebaseMetaPath,app_id){
     appJSONTemplate.expo.description="Made with react app builder";
     appJSONTemplate.expo.slug=response.slug?response.slug:response.name.toLowerCase().replace(/\s/g,"");
     appJSONTemplate.expo.extra.firebaseMetaPath=firebaseMetaPath;
-    appJSONTemplate.expo.android.package=response.id;
-    appJSONTemplate.expo.ios.bundleIdentifier=response.id;
+    appJSONTemplate.expo.android.package=response.id+"expo";
+    appJSONTemplate.expo.ios.bundleIdentifier=response.id+"expo";
     appJSONTemplate.expo.version=updateVersion(appJSONTemplate.expo.version);
     appJSONTemplate.expo.android.versionCode=getVersionCode();
     appName=response.name;
-    
-    //Now save in a app.json
-    var stringToSave=JSON.stringify(appJSONTemplate, null, 2)
-    fs.writeFile((isTesting?"app_test.json":"app.json"), stringToSave, function(err) {
-        if(err) {
-            return console.log(err);
-        }
 
-        console.log(chalk.green("Set up of app.json for app "+appJSONTemplate.expo.name+" is done."));
-        downloadAppImages(response,whatKindOfApp,app_id);
-    }); 
+    if(Config.isCloud&&response.firebaseConfig!=null){
+        var strToSave="var firebaseConfig = ";
+        strToSave+=JSON.stringify(response.firebaseConfig);
+        strToSave+=";\nexports.config = firebaseConfig;";
+
+        fs.writeFile("./firebase_config.js", strToSave, function(err) {
+            
+            if(err) {
+                console.log(err);
+                process.exit();
+            }else{
+                 //Now save in a app.json
+                var stringToSave=JSON.stringify(appJSONTemplate, null, 2)
+                fs.writeFile((isTesting?"app_test.json":"app.json"), stringToSave, function(err) {
+                    if(err) {
+                        return console.log(err);
+                    }
+
+                    console.log(chalk.green("Set up of app.json for app "+appJSONTemplate.expo.name+" is done."));
+                    downloadAppImages(response,whatKindOfApp,app_id);
+                }); 
+            }
+            
+        }); 
+    }else{
+         //Now save in a app.json
+         var stringToSave=JSON.stringify(appJSONTemplate, null, 2)
+         fs.writeFile((isTesting?"app_test.json":"app.json"), stringToSave, function(err) {
+             if(err) {
+                 return console.log(err);
+             }
+
+             console.log(chalk.green("Set up of app.json for app "+appJSONTemplate.expo.name+" is done."));
+             downloadAppImages(response,whatKindOfApp,app_id);
+         }); 
+    }
+
+
+    
+   
 
     
     
 }
+
 /**
  *
  * Downloads all the images
@@ -270,12 +334,11 @@ function downloadAppImages(response,whatKindOfApp,app_id){
                 dowloadSingleImage(response.appNavLogo,appNavLogo,"App Navigation logo",spinner,function(){
                     dowloadSingleImage(response.appSplash,appSplash,"App Splash image",spinner,function(){
                         spinner.stop(true);
-                        if(Config.isSaaS){
+                        if(IS_CYCLE){
                             publishApp(app_id);
                         }else{
                             informUserAboutNextSteps(whatKindOfApp);
                         }
-                        
                     })
                 })
             })
@@ -308,19 +371,51 @@ function dowloadSingleImage(imageFile,locationToSave,elementName,spinner,callBac
     
 }
 
+
+/**
+ * Console ouptut - Local producers ends here
+ * @param {String} whatKindOfApp 
+ */
 function informUserAboutNextSteps(whatKindOfApp){
     console.log(chalk.green("Great, app is sucesfully set up. Next you need to execute the following commands"));
     console.log(chalk.blue("To run your app on simulator or device locally"));
     console.log(chalk.yellow("expo start"));
-    console.log(chalk.blue("To build your app"));
+    console.log(chalk.green("Then you can use the 'Publish' action to publish the app on expo server"));
+    console.log(chalk.blue("To build your app "));
     if(whatKindOfApp=="makeiphoneapp"){
         console.log(chalk.yellow("expo build:ios"))
     }else{
         console.log(chalk.yellow("expo build:android"))
     }
+    
     process.exit(0);
     
 }
+
+//
+function notifyAdminAndStop(message){
+    //TODO IMPROUVE - send on email
+    console.log(chalk.red(message));
+    if(Config.adminEmail!=""){
+        sendEmal(Config.adminEmail,"Error on producer",message+"<br />You need to restart the system");
+    }
+    
+
+    setTimeout(function(){process.exit(0)},10000);
+    
+}
+
+
+
+/**
+ * 
+ * 
+ * 
+ *    SERVER APP PRODUCER SPECIFIC FUNCTIONS FROM NOW ON
+ * 
+ * 
+ */
+
 
 /**
  *Publishes an build on expo server
@@ -329,11 +424,19 @@ function informUserAboutNextSteps(whatKindOfApp){
  */
 function publishApp(app_id){
     console.log(chalk.green("Start publishing build to expo"));
-    var completePath=pathToPointers+"apps_queue/"+app_id+"_both.json";
-    console.log(completePath);
+    var completePath=pathToPointers+"apps_queue/"+app_id+"_both";
+    debugIt(completePath);
 
-    firebaseAPI.get(completePath).then(response=>{
-        if(response.data){
+    var db = admin.database();
+    var ref = db.ref(completePath);
+    ref.once("value", function(snapshot) {
+         var response=snapshot.val();
+
+         console.log(JSON.stringify(response));
+         //updateQueue(7,'both',"https://mobidonia.com",{"appId":2,"userDisplayName":"Daniel Dimov","userEmail":"daniel@mobidonia.com"});
+         //notifyAdminAndStop("Some error");
+
+         if(response!=null){
                 //All ok, start building,
 
                 //There is common problem, 
@@ -355,21 +458,20 @@ function publishApp(app_id){
                         console.log(chalk.cyan('App publishing completed, make android app'));
                         console.log("\n");
                         //updateQueue(app_id,"both");
-                        createAndroidApk(app_id,"both");
+                        createAndroidApk(app_id,"both",response);
                     });
 
                 },20000)
-                
 
-               
-            }else{
-                var error='Error 6: Submit data not set for app: '+app_id;
-                console.log(chalk.red(error));
-                
-                //Dead end, notify admin and stop
-                notifyAdminAndStop(error);
-            }
-        
+
+         }else{
+            var error='Error 6: Submit data not set for app: '+app_id;
+            console.log(chalk.red(error));
+            
+            //Dead end, notify admin and stop
+            notifyAdminAndStop(error);
+         }
+
     })
 
 }
@@ -379,8 +481,9 @@ function publishApp(app_id){
  * Make the android app apk
  * @param {String} whatKindOfApp makeiphoneapp or makeandroidapp
  * @param {Number} app_id - app if to make
+ * @param {Object} response - {"appId":7,"userDisplayName":"admin","userEmail":"somemail@gmail.com"}
  */
-function createAndroidApk(app_id,whatKindOfApp){
+function createAndroidApk(app_id,whatKindOfApp,response){
     //========== ANDROID APP CREATION ==============
     console.log(chalk.green("Start making Android app"));
     exec('npx', ['mexpo-cli','ba','--managed','expo','--no-publish','-t','app-bundle'], {cwd:"./"}, function(output){
@@ -389,7 +492,7 @@ function createAndroidApk(app_id,whatKindOfApp){
         console.log(chalk.green("Android app created. Now send to user."));
         exec('npx',['mexpo-cli','url:apk'],{cwd:"./",capture:true}, function(link){
             if(link&&link.length>10){
-                updateQueue(app_id,whatKindOfApp,link)
+                updateQueue(app_id,whatKindOfApp,link,response)
             }else{
                 var error="ERROR 5: Android app creation failed for id:"+app_id;
                 console.log(chalk.red(error));
@@ -419,7 +522,7 @@ function jobDone(){
     }
 }
 
-async function sendMailToTheUser(androidAppLink){
+async function sendMailToTheUser(androidAppLink,userEmail){
     if(userEmail!=""){
         var subject=Config.subject;
         subject=subject.replace("{appName}",appName);
@@ -428,88 +531,109 @@ async function sendMailToTheUser(androidAppLink){
         message = message.replace("{androidAppLink}",androidAppLink);
         message = message.replace("{appName}",appName);
 
-         //Configure transporter
-         let transporter = nodemailer.createTransport({
-            host: Config.SMTP.serverName,
-            port: Config.SMTP.port,
-            secure: Config.SMTP.port==465, // true for 465, false for other ports
-            auth: {
-                user:  Config.SMTP.username, // generated ethereal user
-                pass: Config.SMTP.password // generated ethereal password
-            }
-        });
-
-        // send mail with defined transport object
-        let info = await transporter.sendMail({
-            from: Config.SMTP.username, // sender address
-            to: userEmail, // list of receivers
-            subject: subject, // Subject line
-            text: '-', // plain text body
-            html: message // html body
-        }).then(()=>{
-            jobDone();
-        });
+        await sendEmal(userEmail,subject,message);
     }else{
         jobDone();
     }
 }
 
-function updateQueue(appID,aplicationType,link){
-    var path="removeFromQueue?appID="+appID+"&aplicationType="+aplicationType+"&linkToApk="+link;
-    cloudFunctionsAPI.get(path).then(res=>{
-        console.log("RESPONSE FROM CLOUD FUNCTIONS FOLLOWS...");
-        console.log(JSON.stringify(res))
 
-        //Now send email to the user
-        sendMailToTheUser(link);
-        
-        
-    })
+async function sendEmal(to,subject,body){
+    console.log(body);
+    let transporter = nodemailer.createTransport({
+        host: Config.SMTP.host,
+        port: Config.SMTP.port,
+        secure: Config.SMTP.port==465, // true for 465, false for other ports
+        auth: {
+            user:  Config.SMTP.auth.user, // generated ethereal user
+            pass: Config.SMTP.auth.pass // generated ethereal password
+        }
+    });
+
+    let info = await transporter.sendMail({
+        from: Config.mailFrom, // sender address
+        to: to, // list of receivers
+        subject: subject, // Subject line
+        text: '-', // plain text body
+        html: body // html body
+    });
+}
+
+
+
+/**
+ * 
+ * @param {*} appID 
+ * @param {*} aplicationType 
+ * @param {*} link 
+ * @param {*} response 
+ */
+function updateQueue(appID,aplicationType,link,response){
+    /**
+     * 1. Get email  response.userEmail
+     * 2. Get URL    link
+     * 3. Send email
+     * 4. Delete node
+     */
+    var appQuePath=pathToPointers+"apps_queue/"+appID+"_both";
+    debugIt(appQuePath);
+    sendMailToTheUser(link,response.userEmail);
+    admin.database().ref(appQuePath).remove()
+      .then(function() {
+        debugIt("app is deleted");
+        jobDone();
+      })
+      .catch(function(error) {
+        console.log('Error deleting data:', error);
+    });
 }
 
 function startBuildCycle(){
-   
-    firebaseAPI.get(pathToPointers+"apps_queue.json").then(response=>{
-        if(response.data==null){
-            console.log(chalk.yellow("No apps to make now. Try in 1 minute"));
-            setTimeout(startBuildCycle,60000);
-        }else{
 
-            //Will provide array of appId_type to make
-            var keys=Object.keys(response.data); 
-            appsInQueue=keys.length;
-            var nextAppToMake=(keys[0]).split("_");
-            var appId=nextAppToMake[0];
-            var appType=nextAppToMake[1];
-            if(response.data[keys[0]].userEmail){
-                userEmail=response.data[keys[0]].userEmail;
+       //Now connect to firebase to get the data
+       var path=pathToPointers+"apps_queue";
+       debugIt("Path to APPS_QUEUE");
+       debugIt(path);
+       
+       var db = admin.database();
+       var ref = db.ref(path);
+       ref.once("value", function(snapshot) {
+            var rab_queue=snapshot.val();
+            if(rab_queue!=null){
+                debugIt(JSON.stringify(rab_queue));
 
-                //Check if userDisplayName exists
-                if(response.data[keys[0]].userDisplayName){
-                    userDisplayName=response.data[keys[0]].userDisplayName;
-                }
-                else{
+                //Will provide array of appId_type to make
+                var keys=Object.keys(rab_queue); 
+                appsInQueue=keys.length;
+                var nextAppToMake=(keys[0]).split("_");
+                var appId=nextAppToMake[0];
+                var appType=nextAppToMake[1];
+                if(rab_queue[keys[0]].userEmail){
+                    userEmail=rab_queue[keys[0]].userEmail;
+
+                    //Check if userDisplayName exists
+                    if(rab_queue[keys[0]].userDisplayName){
+                        userDisplayName=rab_queue[keys[0]].userDisplayName;
+                    }
+                    else{
+                        userDisplayName="";
+                    }
+                }else{
+                    userEmail="";
                     userDisplayName="";
                 }
+                console.log("App we are going to make: App ID: "+appId+" Type: "+appType);
+                startFetchingAppData(appId,appType);
+
             }else{
-                userEmail="";
-                userDisplayName="";
+                console.log(chalk.yellow("No apps to make now. Try in 1 minute"));
+                setTimeout(startBuildCycle,60000);
             }
-            console.log("App we are going to make: App ID: "+appId+" Type: "+appType);
-            startFetchingAppData(appId,appType);
-        }
-       
-       
-
-    })
+       })
 }
 
 
-function notifyAdminAndStop(message){
-    //TODO IMPROUVE - send on email
-    console.log(chalk.red(message));
-    process.exit(0);
-}
+
 
 
 

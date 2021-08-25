@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, {Component,PropTypes} from 'react'
 import firebase from '../../config/database'
 import Config from   '../../config/app';

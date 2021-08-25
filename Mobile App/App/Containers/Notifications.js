@@ -3,15 +3,15 @@
   Mobidonia
 */
 import React, {Component} from "react";
-import {TouchableOpacity,AsyncStorage,FlatList,ImageBackground,Text,View} from "react-native";
+import {TouchableOpacity,AsyncStorage,FlatList,ImageBackground,Text,View,Linking} from "react-native";
 import Navbar from '@components/Navbar'
 import firebase from '@datapoint/Firebase'
 import css from '@styles/global'
 import Smartrow from '@smartrow'
 import T from '@functions/translation'
-import  WebBrowser  from 'expo';
 import { LinearGradient } from 'expo-linear-gradient'
 import Config from '../../config'
+import Empty from '@components/Empty'
 
 const ConditionalWrap = ({condition, wrap, children}) => condition ? wrap(children) : children;
 const ConditionalDisplay = ({condition, children}) => condition ? children : <View></View>;
@@ -28,8 +28,8 @@ export default class Notifications extends Component {
     this.state = {
       items:[],
       animating: true,
-      result: null
-
+      result: null,
+      itemsLoaded:false
     }
 
     //Bind functions
@@ -158,12 +158,11 @@ export default class Notifications extends Component {
           _this.setState({
             items:alteredNotification,
           })
-
           if(item.message.match(/^http?\:\//))
           {
             _this.handleOpenWebBrowser(item.message)
           }else{
-            _this.openDetails(item.longMessage)
+            _this.openDetails(item)
           }
 
         })
@@ -175,12 +174,17 @@ export default class Notifications extends Component {
       
 
   handleOpenWebBrowser = async (item) => {
-    
-    await WebBrowser.openBrowserAsync(item);
+    Linking.canOpenURL(item).then(supported => {
+      if (supported) {
+        Linking.openURL(item);
+      } else {
+
+      }
+    });
   };
 
   openDetails(item){
-    this.props.navigation.navigate('Web',{data:item,fromNotification:true})
+    this.props.navigation.navigate('WebNotificationsSub',{data:item,fromNotification:true})
   }
 
   /**
@@ -204,7 +208,7 @@ export default class Notifications extends Component {
         snapshot
         .docs
         .forEach(doc => {
-          var objToAdd=JSON.parse(doc._document.data.toString());
+          var objToAdd=doc.data();
           objToAdd.id=doc.id;
           objToAdd.isRead=false;
           data.push(objToAdd);
@@ -213,7 +217,8 @@ export default class Notifications extends Component {
         _this.checkReadStatus(data,"readedNotification",function(alteredNotification,errorOccured){
           _this.setState({
             items:alteredNotification,
-            animating:false
+            animating:false,
+            itemsLoaded:true,
           })
         })
       
@@ -245,9 +250,9 @@ export default class Notifications extends Component {
         >{children}</ImageBackground>}
       >
       <LinearGradient colors={bgGradient} style={[{flex:1},css.layout.containerBackground]}>
-          <Navbar navigation={this.props.navigation} isRoot={this.props.isRoot} showRightButton={false}  />
-          <ConditionalDisplay condition={this.state.items.length==0}>
-            <Text style={css.layout.noItemsTextStyle}>{T.no_notifications}</Text>
+          <Navbar navigation={this.props.navigation} back={!this.props.isRoot} showRightButton={false} title={"Notifications"}  />
+          <ConditionalDisplay condition={this.state.items.length==0&&this.state.itemsLoaded}>
+            <Empty text={T.no_notifications} />
           </ConditionalDisplay>
           <FlatList
             data={this.state.items}

@@ -16,9 +16,8 @@ export default class SingleImage extends Component {
 
   render() {
     return (
-       <View style={[style.singleImageWrapper]}>
+       
           <Image source={{uri:this.props.url}} style={[style.singleImage,{"overflow":"hidden",borderRadius:css.dynamic.general.rounded+""=="true"?4:0}]}></Image>
-       </View>
     );
   }
 }

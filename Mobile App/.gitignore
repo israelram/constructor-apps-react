@@ -2,3 +2,4 @@ node_modules/**/*
 .expo/*
 .vscode/*
 npm-debug.*
+Producer/service-account-file.json

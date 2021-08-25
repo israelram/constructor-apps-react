@@ -79,7 +79,7 @@ export default class OrderAction extends Component {
             alert('No such document!');
           } else {
            
-            var objToAdd=JSON.parse(doc._document.data.toString());
+            var objToAdd=doc.data();
             objToAdd.id=doc.id;
             
             

@@ -1,5 +1,7 @@
-import EventEmitter from 'EventEmitter';
+/** @format */
 
-var AppEventEmitter = new EventEmitter();
+import { DeviceEventEmitter } from "react-native";
+
+var AppEventEmitter = DeviceEventEmitter;
 
 export default AppEventEmitter;

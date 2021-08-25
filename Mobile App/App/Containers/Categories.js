@@ -4,12 +4,13 @@
   daniel@mobidonia.com
 */
 import React, {Component,PropTypes} from "react";
-import {Text,View,Image,FlatList,TouchableOpacity,Linking,ActivityIndicator} from "react-native";
+import {View,Image,FlatList,TouchableOpacity,Linking,ActivityIndicator} from "react-native";
 import Navbar from '@components/Navbar'
 import firebase from '@datapoint/Firebase'
 import css from '@styles/global'
 import Smartrow from '@smartrow'
 import Config from '../../config'
+import { Block, Text } from 'galio-framework';
 import {
   AdMobBanner,
   PublisherBanner,
@@ -99,7 +100,7 @@ export default class Categories extends Component {
       }else{
         querySnapshot.forEach(function(doc) {
           
-          var objToAdd=JSON.parse(doc._document.data.toString());
+          var objToAdd=doc.data();
           //Add the id, on each object, easier for referencing
           objToAdd.id=doc.id;
           categories.push(objToAdd);
@@ -190,7 +191,7 @@ export default class Categories extends Component {
       }else{
        
         //If nothing else, this is master
-        var manualItem={name: item.name, id:item.id,data_point:this.state.data_point,listingSetup:this.state.pr.data.listingSetup};
+        var manualItem={name: item[this.state.pr.data.listingSetup.fields.title], id:item.id,data_point:this.state.data_point,listingSetup:this.state.pr.data.listingSetup};
         var completeItem={ ...item, ...manualItem }
         this.props.navigation.navigate('Master', completeItem)
        
@@ -246,7 +247,7 @@ export default class Categories extends Component {
     
     if(numItems == 0 && this.state.animating == false){
        return (
-          <Text style={css.layout.noItemsTextStyle}>{T.no_categories}</Text>
+          <Text muted>{T.no_categories}</Text>
         )
     }
   }
@@ -281,7 +282,7 @@ export default class Categories extends Component {
             <ActivityIndicator
                   animating={this.state.animating}
                   style={css.layout.activityIndicator}
-                  color={css.dynamic.general.buttonColor}
+                  //color={css.dynamic.general.buttonColor}
                   size="large"
                   hidesWhenStopped={true}/>
           </View>
@@ -299,18 +300,14 @@ export default class Categories extends Component {
       ?css.layout.categoryList:null;
 
     return (
-      <View style={css.layout.containerBackground}>
-        <Navbar navigation={this.props.navigation} detailsView={true} isRoot={this.state.pr.isRoot}/>
+      <Block flex >
+          <Navbar navigation={this.props.navigation} detailsView={true} isRoot={this.state.pr.isRoot} title={this.state.pr.data.name||this.state.pr.data.categorySetup.name}/>
           {this.showBanner()}
-          
-
-        <View style={[css.layout.commonContainer]}>
+          <Block flex>
         
 
           <FlatList
-
-           foot
-            style={[{marginBottom:100}]}
+            foot
             contentContainerStyle={containerStyle}
             ListHeaderComponent={this.renderHeaderImage()}
             data={this.state.pr.data.categorySetup.subMenus?this.state.menus:this.state.categories}
@@ -321,11 +318,8 @@ export default class Categories extends Component {
          
           {this.showActivityIndicator()}
           {this.renderIf()}
-        </View>
-
-
-
-      </View>
+        </Block>
+      </Block>
     );
   }
 }

@@ -81,7 +81,9 @@ const en={
     userWithNoAccess:"This user doesn't have permissions to use the application. Please try again with different user.",
     enterContactName:"Enter contact name",
     contactName:"Contact name",
-    find:"Find"
+    find:"Find",
+    what_are_you_looking_for:"What are you looking for?",
+    add_to_cart:"Add to cart"
   };
 const es={
     variant_not_available:"La variante seleccionada no está disponiblee",

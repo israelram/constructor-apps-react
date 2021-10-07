@@ -29,7 +29,7 @@
     "moment": "^2.24.0",
     "radio-song": "^0.1.8",
     "request": "^2.88.0",
-    "rxjs": "^6.3.3",
+    "rxjs": "^6.6.7",
     "website-to-json": "^1.0.22"
   },
   "private": true

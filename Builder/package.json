@@ -12,7 +12,7 @@
     "draftjs-to-html": "0.7.2",
     "file-saver": "^2.0.1",
     "firebase": "6.0.4",
-    "firebase-admin": "^8.9.2",
+    "firebase-admin": "^10.0.2",
     "halogen": "0.2.0",
     "html-to-draftjs": "1.4.0",
     "http": "0.0.0",

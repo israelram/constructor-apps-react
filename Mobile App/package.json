@@ -28,7 +28,7 @@
     "apisauce": "1.1.1",
     "base-64": "0.1.0",
     "currency-formatter": "1.5.5",
-    "expo": "^38.0.0",
+    "expo": "^40.0.0",
     "expo-ads-admob": "~8.2.1",
     "expo-av": "~8.2.1",
     "expo-barcode-scanner": "~8.2.1",

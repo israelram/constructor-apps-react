@@ -15,7 +15,9 @@
     "server": "node ./Producer/produce.js  --server",
     "pmserver": "pm2 start ./Producer/produce.js  -- --server",
     "zipit": "node ./Producer/zipper.js",
-    "gitpush": "git push https://github.com/dimovdaniel/uniexpo.git"
+    "gitpush": "git push https://github.com/dimovdaniel/uniexpo.git",
+    "prepare": "npm run snyk-protect",
+    "snyk-protect": "snyk-protect"
   },
   "jest": {
     "preset": "jest-expo"
@@ -74,7 +76,8 @@
     "react-navigation-drawer": "2.3.3",
     "react-navigation-stack": "2.0.16",
     "react-navigation-tabs": "2.7.0",
-    "to-case": "2.0.0"
+    "to-case": "2.0.0",
+    "@snyk/protect": "latest"
   },
   "devDependencies": {
     "anchorme": "1.1.2",
@@ -91,5 +94,6 @@
     "nodemailer": "6.3.1",
     "replace-in-file": "^5.0.2",
     "schedule": "0.4.0"
-  }
+  },
+  "snyk": true
 }

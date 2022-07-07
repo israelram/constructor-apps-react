@@ -46,7 +46,7 @@
     "geofirestore": "3.4.1",
     "i18n-js": "3.5.1",
     "md5": "^2.2.1",
-    "moment": "2.24.0",
+    "moment": "2.29.4",
     "react": "16.11.0",
     "react-native": "0.62.2",
     "react-native-app-intro-slider": "3.0.0",
